@@ -22,6 +22,7 @@ package org.apache.druid.segment.realtime.appenderator;
 import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.SegmentAndSchema;
 import org.apache.druid.timeline.partition.BucketNumberedShardSpec;
 import org.apache.druid.timeline.partition.BuildingShardSpec;
 import org.apache.druid.timeline.partition.OverwriteShardSpec;
@@ -50,44 +51,44 @@ public final class SegmentPublisherHelper
    * - When segment lock is used, the overwriting task should set the proper size of the atomic update group.
    *   See {@link #annotateAtomicUpdateGroupFn}.
    */
-  static Set<DataSegment> annotateShardSpec(Set<DataSegment> segments)
+  static Set<SegmentAndSchema> annotateShardSpec(Set<SegmentAndSchema> segmentAndSchemas)
   {
-    final Map<Interval, List<DataSegment>> intervalToSegments = new HashMap<>();
-    segments.forEach(
-        segment -> intervalToSegments.computeIfAbsent(segment.getInterval(), k -> new ArrayList<>()).add(segment)
+    final Map<Interval, List<SegmentAndSchema>> intervalToSegments = new HashMap<>();
+    segmentAndSchemas.forEach(
+        segmentAndSchema -> intervalToSegments.computeIfAbsent(segmentAndSchema.getDataSegment().getInterval(), k -> new ArrayList<>()).add(segmentAndSchema)
     );
 
-    for (Entry<Interval, List<DataSegment>> entry : intervalToSegments.entrySet()) {
+    for (Entry<Interval, List<SegmentAndSchema>> entry : intervalToSegments.entrySet()) {
       final Interval interval = entry.getKey();
-      final List<DataSegment> segmentsPerInterval = entry.getValue();
-      final ShardSpec firstShardSpec = segmentsPerInterval.get(0).getShardSpec();
-      final boolean anyMismatch = segmentsPerInterval.stream().anyMatch(
-          segment -> segment.getShardSpec().getClass() != firstShardSpec.getClass()
+      final List<SegmentAndSchema> segmentAndSchemasPerInterval = entry.getValue();
+      final ShardSpec firstShardSpec = segmentAndSchemasPerInterval.get(0).getDataSegment().getShardSpec();
+      final boolean anyMismatch = segmentAndSchemasPerInterval.stream().anyMatch(
+          segment -> segment.getDataSegment().getShardSpec().getClass() != firstShardSpec.getClass()
       );
       if (anyMismatch) {
         throw new ISE(
             "Mismatched shardSpecs in interval[%s] for segments[%s]",
             interval,
-            segmentsPerInterval
+            segmentAndSchemasPerInterval
         );
       }
       final Function<DataSegment, DataSegment> annotateFn;
       if (firstShardSpec instanceof OverwriteShardSpec) {
-        annotateFn = annotateAtomicUpdateGroupFn(segmentsPerInterval.size());
+        annotateFn = annotateAtomicUpdateGroupFn(segmentAndSchemasPerInterval.size());
       } else if (firstShardSpec instanceof BuildingShardSpec) {
         // sanity check
         // BuildingShardSpec is used in non-appending mode. In this mode,
         // the segments in each interval should have contiguous partitionIds,
         // so that they can be queryable (see PartitionHolder.isComplete()).
-        int expectedCorePartitionSetSize = segmentsPerInterval.size();
+        int expectedCorePartitionSetSize = segmentAndSchemasPerInterval.size();
         int actualCorePartitionSetSize = Math.toIntExact(
-            segmentsPerInterval
+            segmentAndSchemasPerInterval
                 .stream()
-                .filter(segment -> segment.getShardSpec().getPartitionNum() < expectedCorePartitionSetSize)
+                .filter(segmentAndSchema -> segmentAndSchema.getDataSegment().getShardSpec().getPartitionNum() < expectedCorePartitionSetSize)
                 .count()
         );
         if (expectedCorePartitionSetSize != actualCorePartitionSetSize) {
-          LOG.errorSegments(segmentsPerInterval, "Cannot publish segments due to incomplete time chunk");
+          LOG.errorSegments(segmentAndSchemasPerInterval, "Cannot publish segments due to incomplete time chunk");
           throw new ISE(
               "Cannot publish segments due to incomplete time chunk for interval[%s]. "
               + "Expected [%s] segments in the core partition, but only [%] segments are found. "
@@ -105,7 +106,7 @@ public final class SegmentPublisherHelper
       }
 
       if (annotateFn != null) {
-        intervalToSegments.put(interval, segmentsPerInterval.stream().map(annotateFn).collect(Collectors.toList()));
+        intervalToSegments.put(interval, segmentAndSchemasPerInterval.stream().map(annotateFn).collect(Collectors.toList()));
       }
     }
 

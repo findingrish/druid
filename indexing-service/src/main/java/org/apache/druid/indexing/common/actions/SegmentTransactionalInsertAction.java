@@ -38,6 +38,7 @@ import org.apache.druid.java.util.emitter.service.ServiceMetricEvent;
 import org.apache.druid.query.DruidMetrics;
 import org.apache.druid.segment.SegmentUtils;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.SegmentAndSchema;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
@@ -65,7 +66,7 @@ public class SegmentTransactionalInsertAction implements TaskAction<SegmentPubli
   /**
    * Set of segments to be inserted into metadata storage
    */
-  private final Set<DataSegment> segments;
+  private final Set<SegmentAndSchema> segments;
   /**
    * Set of segments to be dropped (mark unused) when new segments, {@link SegmentTransactionalInsertAction#segments},
    * are inserted into metadata storage.
@@ -83,14 +84,14 @@ public class SegmentTransactionalInsertAction implements TaskAction<SegmentPubli
   public static SegmentTransactionalInsertAction overwriteAction(
       @Nullable Set<DataSegment> segmentsToBeOverwritten,
       @Nullable Set<DataSegment> segmentsToBeDropped,
-      Set<DataSegment> segmentsToPublish
+      Set<SegmentAndSchema> segmentsToPublish
   )
   {
     return new SegmentTransactionalInsertAction(segmentsToBeOverwritten, segmentsToBeDropped, segmentsToPublish, null, null, null);
   }
 
   public static SegmentTransactionalInsertAction appendAction(
-      Set<DataSegment> segments,
+      Set<SegmentAndSchema> segments,
       @Nullable DataSourceMetadata startMetadata,
       @Nullable DataSourceMetadata endMetadata
   )
@@ -111,7 +112,7 @@ public class SegmentTransactionalInsertAction implements TaskAction<SegmentPubli
   private SegmentTransactionalInsertAction(
       @JsonProperty("segmentsToBeOverwritten") @Nullable Set<DataSegment> segmentsToBeOverwritten,
       @JsonProperty("segmentsToBeDropped") @Nullable Set<DataSegment> segmentsToBeDropped,
-      @JsonProperty("segments") @Nullable Set<DataSegment> segments,
+      @JsonProperty("segments") @Nullable Set<SegmentAndSchema> segments,
       @JsonProperty("startMetadata") @Nullable DataSourceMetadata startMetadata,
       @JsonProperty("endMetadata") @Nullable DataSourceMetadata endMetadata,
       @JsonProperty("dataSource") @Nullable String dataSource
@@ -140,7 +141,7 @@ public class SegmentTransactionalInsertAction implements TaskAction<SegmentPubli
   }
 
   @JsonProperty
-  public Set<DataSegment> getSegments()
+  public Set<SegmentAndSchema> getSegments()
   {
     return segments;
   }

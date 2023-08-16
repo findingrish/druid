@@ -22,25 +22,27 @@ package org.apache.druid.segment.realtime.appenderator;
 import com.google.common.collect.ImmutableList;
 import org.apache.druid.segment.SegmentUtils;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.SegmentAndSchema;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class SegmentsAndCommitMetadata
 {
   private static final SegmentsAndCommitMetadata NIL = new SegmentsAndCommitMetadata(Collections.emptyList(), null);
 
   private final Object commitMetadata;
-  private final ImmutableList<DataSegment> segments;
+  private final ImmutableList<SegmentAndSchema> segmentAndSchemas;
 
   public SegmentsAndCommitMetadata(
-      List<DataSegment> segments,
+      List<SegmentAndSchema> segmentAndSchemas,
       @Nullable Object commitMetadata
   )
   {
-    this.segments = ImmutableList.copyOf(segments);
+    this.segmentAndSchemas = ImmutableList.copyOf(segmentAndSchemas);
     this.commitMetadata = commitMetadata;
   }
 
@@ -52,7 +54,11 @@ public class SegmentsAndCommitMetadata
 
   public List<DataSegment> getSegments()
   {
-    return segments;
+    return segmentAndSchemas.stream().map(SegmentAndSchema::getDataSegment).collect(Collectors.toList());
+  }
+
+  public List<SegmentAndSchema> getSegmentAndSchemas() {
+    return segmentAndSchemas;
   }
 
   @Override
@@ -66,13 +72,13 @@ public class SegmentsAndCommitMetadata
     }
     SegmentsAndCommitMetadata that = (SegmentsAndCommitMetadata) o;
     return Objects.equals(commitMetadata, that.commitMetadata) &&
-           Objects.equals(segments, that.segments);
+           Objects.equals(segmentAndSchemas, that.segmentAndSchemas);
   }
 
   @Override
   public int hashCode()
   {
-    return Objects.hash(commitMetadata, segments);
+    return Objects.hash(commitMetadata, segmentAndSchemas);
   }
 
   @Override
@@ -80,7 +86,7 @@ public class SegmentsAndCommitMetadata
   {
     return getClass().getSimpleName() + "{" +
            "commitMetadata=" + commitMetadata +
-           ", segments=" + SegmentUtils.commaSeparatedIdentifiers(segments) +
+           ", segments=" + SegmentUtils.commaSeparatedIdentifiers(getSegments()) +
            '}';
   }
 

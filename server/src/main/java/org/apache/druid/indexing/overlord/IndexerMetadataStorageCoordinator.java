@@ -22,6 +22,7 @@ package org.apache.druid.indexing.overlord;
 import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.segment.realtime.appenderator.SegmentIdWithShardSpec;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.SegmentAndSchema;
 import org.apache.druid.timeline.partition.PartialShardSpec;
 import org.joda.time.Interval;
 
@@ -153,7 +154,7 @@ public interface IndexerMetadataStorageCoordinator
    *
    * @return set of segments actually added
    */
-  Set<DataSegment> announceHistoricalSegments(Set<DataSegment> segments) throws IOException;
+  Set<DataSegment> announceHistoricalSegments(Set<SegmentAndSchema> segments) throws IOException;
 
   /**
    * Allocates pending segments for the given requests in the pending segments table.
@@ -260,7 +261,7 @@ public interface IndexerMetadataStorageCoordinator
    * @throws RuntimeException         if the state of metadata storage after this call is unknown
    */
   SegmentPublishResult announceHistoricalSegments(
-      Set<DataSegment> segments,
+      Set<SegmentAndSchema> segments,
       Set<DataSegment> segmentsToDrop,
       @Nullable DataSourceMetadata startMetadata,
       @Nullable DataSourceMetadata endMetadata

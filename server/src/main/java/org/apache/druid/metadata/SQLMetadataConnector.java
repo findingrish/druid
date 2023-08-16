@@ -466,7 +466,7 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
     );
   }
 
-  public void createSupervisorsTable(final String tableName)
+  public void createSupervisorsTable (final String tableName)
   {
     createTable(
         tableName,
@@ -482,6 +482,24 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
                 tableName, getSerialType(), getPayloadType()
             ),
             StringUtils.format("CREATE INDEX idx_%1$s_spec_id ON %1$s(spec_id)", tableName)
+        )
+    );
+  }
+
+  public void createSegmentSchemaTable(final String tableName)
+  {
+    createTable(
+        tableName,
+        ImmutableList.of(
+            StringUtils.format(
+                "CREATE TABLE %1$s (\n"
+                + "  PRIMARY KEY (id),\n"
+                + "  fingerprint VARCHAR(255) %4$s NOT NULL,\n"
+                + "  payload %2$s NOT NULL,\n"
+                + ")",
+                tableName, getPayloadType(), getQuoteString(), getCollation()
+            ),
+            StringUtils.format("CREATE INDEX idx_%1$s_used ON %1$s(fingerprint)", tableName)
         )
     );
   }
@@ -844,6 +862,14 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
     }
     catch (Exception e) {
       log.warn(e, "Exception while deleting records from table");
+    }
+  }
+
+  @Override
+  public void createSegmentSchemaTable()
+  {
+    if (config.get().isCreateTables()) {
+      createSegmentSchemaTable(tablesConfigSupplier.get().getSegmentSchemaTable());
     }
   }
 

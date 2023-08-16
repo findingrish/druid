@@ -49,10 +49,12 @@ import org.apache.druid.java.util.common.lifecycle.LifecycleStart;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.java.util.common.parsers.CloseableIterator;
 import org.apache.druid.segment.SegmentUtils;
+import org.apache.druid.segment.column.SegmentSchema;
 import org.apache.druid.segment.realtime.appenderator.SegmentIdWithShardSpec;
 import org.apache.druid.timeline.DataSegment;
 import org.apache.druid.timeline.Partitions;
 import org.apache.druid.timeline.SegmentTimeline;
+import org.apache.druid.timeline.SegmentAndSchema;
 import org.apache.druid.timeline.TimelineObjectHolder;
 import org.apache.druid.timeline.partition.NoneShardSpec;
 import org.apache.druid.timeline.partition.PartialShardSpec;
@@ -291,7 +293,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
   }
 
   @Override
-  public Set<DataSegment> announceHistoricalSegments(final Set<DataSegment> segments) throws IOException
+  public Set<DataSegment> announceHistoricalSegments(final Set<SegmentAndSchema> segments) throws IOException
   {
     final SegmentPublishResult result = announceHistoricalSegments(segments, null, null, null);
 
@@ -305,7 +307,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
 
   @Override
   public SegmentPublishResult announceHistoricalSegments(
-      final Set<DataSegment> segments,
+      final Set<SegmentAndSchema> segments,
       final Set<DataSegment> segmentsToDrop,
       @Nullable final DataSourceMetadata startMetadata,
       @Nullable final DataSourceMetadata endMetadata
@@ -1385,7 +1387,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
    */
   private Set<DataSegment> announceHistoricalSegmentBatch(
       final Handle handle,
-      final Set<DataSegment> segments,
+      final Set<SegmentAndSchema> segments,
       final Set<DataSegment> usedSegments
   ) throws IOException
   {
@@ -1399,7 +1401,56 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
         }
       }
 
-      // SELECT -> INSERT can fail due to races; callers must be prepared to retry.
+      // insert segment schema
+      // for each segment to be inserted check their schema fingerprint if it exist only assoicate it with its id
+      // if not insert a new entry in the schema table and associate its id with segment
+      Set<SegmentSchema> segmentSchemas = new HashSet<>();
+      Map<String, String> existingSchemaFingerprintId = segmentSchemaExistsBatch(handle, segmentSchemas);
+      Set<SegmentSchema> toInsertSchema = new HashSet<>();
+      for (SegmentSchema segmentSchema : segmentSchemas) {
+        if (!existingSchemaFingerprintId.containsKey(segmentSchema.getFingerprint())) {
+          toInsertSchema.add(segmentSchema);
+        }
+      }
+
+      PreparedBatch insertSchemaPreparedBatch = handle.prepareBatch(
+          StringUtils.format(
+              "INSERT INTO %1$s (id, fingerprint, payload) "
+              + "VALUES (:id, :fingerprint, :payload)",
+              dbTables.getSegmentSchemaTable()
+          )
+      );
+
+      final List<List<SegmentSchema>> partitionedSchemas = Lists.partition(
+          new ArrayList<>(toInsertSchema),
+          MAX_NUM_SEGMENTS_TO_ANNOUNCE_AT_ONCE
+      );
+
+      // get schema id, fingerprint after inserting new schema and combine old and
+      // new ids and add it in the segments table
+      for (List<SegmentSchema> partition : partitionedSchemas) {
+        for (SegmentSchema schema : partition) {
+          insertSchemaPreparedBatch.add()
+                                    .bind("fingerprint", schema.getFingerprint())
+                                    .bind("payload", jsonMapper.writeValueAsBytes(schema));
+        }
+        final int[] affectedRows = insertSchemaPreparedBatch.execute();
+        final boolean succeeded = Arrays.stream(affectedRows).allMatch(eachAffectedRows -> eachAffectedRows == 1);
+        if (succeeded) {
+         // log.infoSegments(partition, "Published segments to DB");
+        } else {
+//          final List<DataSegment> failedToPublish = IntStream.range(0, partition.size())
+//                                                             .filter(i -> affectedRows[i] != 1)
+//                                                             .mapToObj(partition::get)
+//                                                             .collect(Collectors.toList());
+          throw new ISE(
+              "Failed to publish schemas to DB"
+          );
+        }
+      }
+
+
+    // SELECT -> INSERT can fail due to races; callers must be prepared to retry.
       // Avoiding ON DUPLICATE KEY since it's not portable.
       // Avoiding try/catch since it may cause inadvertent transaction-splitting.
       final List<List<DataSegment>> partitionedSegments = Lists.partition(
@@ -1407,7 +1458,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
           MAX_NUM_SEGMENTS_TO_ANNOUNCE_AT_ONCE
       );
 
-      PreparedBatch preparedBatch = handle.prepareBatch(
+      PreparedBatch insertSegmentPreparedBatch = handle.prepareBatch(
           StringUtils.format(
               "INSERT INTO %1$s (id, dataSource, created_date, start, %2$send%2$s, partitioned, version, used, payload) "
                   + "VALUES (:id, :dataSource, :created_date, :start, :end, :partitioned, :version, :used, :payload)",
@@ -1418,7 +1469,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
 
       for (List<DataSegment> partition : partitionedSegments) {
         for (DataSegment segment : partition) {
-          preparedBatch.add()
+          insertSegmentPreparedBatch.add()
               .bind("id", segment.getId().toString())
               .bind("dataSource", segment.getDataSource())
               .bind("created_date", DateTimes.nowUtc().toString())
@@ -1429,7 +1480,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
               .bind("used", usedSegments.contains(segment))
               .bind("payload", jsonMapper.writeValueAsBytes(segment));
         }
-        final int[] affectedRows = preparedBatch.execute();
+        final int[] affectedRows = insertSegmentPreparedBatch.execute();
         final boolean succeeded = Arrays.stream(affectedRows).allMatch(eachAffectedRows -> eachAffectedRows == 1);
         if (succeeded) {
           log.infoSegments(partition, "Published segments to DB");
@@ -1468,6 +1519,28 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
       existedSegments.addAll(existIds);
     }
     return existedSegments;
+  }
+
+  private Map<String, String> segmentSchemaExistsBatch(final Handle handle, final Set<SegmentSchema> segmentSchemas)
+  {
+    Map<String, String> existingFingerprints = new HashMap<>();
+
+    List<List<SegmentSchema>> segmentSchemaLists = Lists.partition(new ArrayList<>(segmentSchemas), MAX_NUM_SEGMENTS_TO_ANNOUNCE_AT_ONCE);
+    for (List<SegmentSchema> segmentSchemaPartition : segmentSchemaLists) {
+      String fingerprints = segmentSchemaPartition.stream()
+                                     .map(segment -> "'" + StringEscapeUtils.escapeSql(segment.getFingerprint()) + "'")
+                                     .collect(Collectors.joining(","));
+          handle.createQuery(StringUtils.format(
+                    "SELECT id, fingerprint FROM %s WHERE  in (%s)",
+                    dbTables.getSegmentSchemaTable(),
+                    fingerprints
+                ))
+                .map((int index, ResultSet r, StatementContext ctx) -> {
+                  existingFingerprints.put(r.getString("fingerprint"), r.getString("id"));
+                  return null;
+                });
+    }
+    return existingFingerprints;
   }
 
   /**

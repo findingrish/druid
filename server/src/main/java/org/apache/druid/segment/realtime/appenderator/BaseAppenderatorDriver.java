@@ -44,6 +44,7 @@ import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.segment.loading.DataSegmentKiller;
 import org.apache.druid.segment.realtime.appenderator.SegmentWithState.SegmentState;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.SegmentAndSchema;
 import org.apache.druid.utils.CollectionUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -542,7 +543,7 @@ public abstract class BaseAppenderatorDriver implements Closeable
         (Function<Object, SegmentsAndCommitMetadata>) x -> {
           final Object metadata = segmentsAndCommitMetadata.getCommitMetadata();
           return new SegmentsAndCommitMetadata(
-              segmentsAndCommitMetadata.getSegments(),
+              segmentsAndCommitMetadata.getSegmentAndSchemas(),
               metadata == null ? null : ((AppenderatorDriverMetadata) metadata).getCallerMetadata()
           );
         }
@@ -567,9 +568,10 @@ public abstract class BaseAppenderatorDriver implements Closeable
       java.util.function.Function<Set<DataSegment>, Set<DataSegment>> outputSegmentsAnnotateFunction
   )
   {
-    final Set<DataSegment> pushedAndTombstones = new HashSet<>(segmentsAndCommitMetadata.getSegments());
+    final Set<SegmentAndSchema> pushedAndTombstones = new HashSet<>(segmentsAndCommitMetadata.getSegmentAndSchemas());
     if (tombstones != null) {
-      pushedAndTombstones.addAll(tombstones);
+      // add tomobstones without schema
+      tombstones.forEach(tombstone -> pushedAndTombstones.add(new SegmentAndSchema(tombstone, null)));
     }
     if (pushedAndTombstones.isEmpty()) {
       // no tombstones and no pushed segments, so nothing to publish...
@@ -598,11 +600,11 @@ public abstract class BaseAppenderatorDriver implements Closeable
     return executor.submit(
         () -> {
           try {
-            final ImmutableSet<DataSegment> ourSegments = ImmutableSet.copyOf(pushedAndTombstones);
+            final ImmutableSet<SegmentAndSchema> ourSegmentAndSchemas = ImmutableSet.copyOf(pushedAndTombstones);
             final SegmentPublishResult publishResult = publisher.publishSegments(
                 segmentsToBeOverwritten,
                 segmentsToBeDropped,
-                ourSegments,
+                ourSegmentAndSchemas,
                 outputSegmentsAnnotateFunction,
                 callerMetadata
             );
@@ -631,11 +633,14 @@ public abstract class BaseAppenderatorDriver implements Closeable
                   .collect(Collectors.toSet());
 
               final Set<DataSegment> activeSegments = usedSegmentChecker.findUsedSegments(segmentsIdentifiers);
+              final Set<DataSegment> ourSegments = ourSegmentAndSchemas.stream()
+                                                                       .map(SegmentAndSchema::getDataSegment)
+                                                                       .collect(Collectors.toSet());
 
               if (activeSegments.equals(ourSegments)) {
                 log.info(
                     "Could not publish [%s] segments, but checked and found them already published; continuing.",
-                    ourSegments.size()
+                    ourSegmentAndSchemas.size()
                 );
                 log.infoSegments(
                     segmentsAndCommitMetadata.getSegments(),
@@ -646,7 +651,7 @@ public abstract class BaseAppenderatorDriver implements Closeable
                 // they were probably pushed by a replica, and with the unique paths option).
                 final boolean physicallyDisjoint = Sets.intersection(
                     activeSegments.stream().map(DataSegment::getLoadSpec).collect(Collectors.toSet()),
-                    ourSegments.stream().map(DataSegment::getLoadSpec).collect(Collectors.toSet())
+                    ourSegmentAndSchemas.stream().map(SegmentAndSchema::getDataSegment).map(DataSegment::getLoadSpec).collect(Collectors.toSet())
                 ).isEmpty();
 
                 if (physicallyDisjoint) {

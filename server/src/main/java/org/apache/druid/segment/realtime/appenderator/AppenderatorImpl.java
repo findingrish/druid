@@ -60,8 +60,12 @@ import org.apache.druid.segment.IndexIO;
 import org.apache.druid.segment.IndexMerger;
 import org.apache.druid.segment.QueryableIndex;
 import org.apache.druid.segment.QueryableIndexSegment;
+import org.apache.druid.segment.QueryableIndexStorageAdapter;
 import org.apache.druid.segment.ReferenceCountingSegment;
 import org.apache.druid.segment.Segment;
+import org.apache.druid.segment.StorageAdapter;
+import org.apache.druid.segment.column.RowSignature;
+import org.apache.druid.segment.column.SegmentSchema;
 import org.apache.druid.segment.incremental.IncrementalIndexAddResult;
 import org.apache.druid.segment.incremental.IndexSizeExceededException;
 import org.apache.druid.segment.incremental.ParseExceptionHandler;
@@ -73,6 +77,7 @@ import org.apache.druid.segment.realtime.FireHydrant;
 import org.apache.druid.segment.realtime.plumber.Sink;
 import org.apache.druid.server.coordination.DataSegmentAnnouncer;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.SegmentAndSchema;
 import org.apache.druid.timeline.SegmentId;
 import org.apache.druid.timeline.VersionedIntervalTimeline;
 import org.joda.time.Interval;
@@ -764,7 +769,7 @@ public class AppenderatorImpl implements Appenderator
         // segments.
         persistAll(committer),
         (Function<Object, SegmentsAndCommitMetadata>) commitMetadata -> {
-          final List<DataSegment> dataSegments = new ArrayList<>();
+          final List<SegmentAndSchema> segmentAndSchemas = new ArrayList<>();
 
           log.info("Preparing to push (stats): processed rows: [%d], sinks: [%d], fireHydrants (across sinks): [%d]",
                    rowIngestionMeters.getProcessed(), theSinks.size(), pushedHydrantsCount.get()
@@ -781,13 +786,13 @@ public class AppenderatorImpl implements Appenderator
               continue;
             }
 
-            final DataSegment dataSegment = mergeAndPush(
+            final SegmentAndSchema segmentAndSchema = mergeAndPush(
                 entry.getKey(),
                 entry.getValue(),
                 useUniquePath
             );
-            if (dataSegment != null) {
-              dataSegments.add(dataSegment);
+            if (segmentAndSchema != null) {
+              segmentAndSchemas.add(segmentAndSchema);
             } else {
               log.warn("mergeAndPush[%s] returned null, skipping.", entry.getKey());
             }
@@ -795,7 +800,7 @@ public class AppenderatorImpl implements Appenderator
 
           log.info("Push complete...");
 
-          return new SegmentsAndCommitMetadata(dataSegments, commitMetadata);
+          return new SegmentsAndCommitMetadata(segmentAndSchemas, commitMetadata);
         },
         pushExecutor
     );
@@ -824,7 +829,7 @@ public class AppenderatorImpl implements Appenderator
    * @return segment descriptor, or null if the sink is no longer valid
    */
   @Nullable
-  private DataSegment mergeAndPush(
+  private SegmentAndSchema mergeAndPush(
       final SegmentIdWithShardSpec identifier,
       final Sink sink,
       final boolean useUniquePath
@@ -868,7 +873,8 @@ public class AppenderatorImpl implements Appenderator
           );
         } else {
           log.info("Segment[%s] already pushed, skipping.", identifier);
-          return objectMapper.readValue(descriptorFile, DataSegment.class);
+          DataSegment readSegment = objectMapper.readValue(descriptorFile, DataSegment.class);
+          return new SegmentAndSchema(readSegment, getSegmentSchema(descriptorFile));
         }
       }
 
@@ -988,13 +994,21 @@ public class AppenderatorImpl implements Appenderator
           objectMapper.writeValueAsString(segment.getLoadSpec())
       );
 
-      return segment;
+      return new SegmentAndSchema(segment, getSegmentSchema(mergedFile));
     }
     catch (Exception e) {
       metrics.incrementFailedHandoffs();
       log.warn(e, "Failed to push merged index for segment[%s].", identifier);
       throw new RuntimeException(e);
     }
+  }
+
+  private SegmentSchema getSegmentSchema(File segmentFile) throws IOException
+  {
+    final QueryableIndex queryableIndex = indexIO.loadIndex(segmentFile);
+    final StorageAdapter storageAdapter = new QueryableIndexStorageAdapter(queryableIndex);
+    final RowSignature rowSignature = storageAdapter.getRowSignature();
+    return new SegmentSchema(rowSignature);
   }
 
   @Override

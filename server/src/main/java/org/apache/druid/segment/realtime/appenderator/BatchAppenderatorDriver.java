@@ -30,6 +30,7 @@ import org.apache.druid.java.util.common.ISE;
 import org.apache.druid.segment.loading.DataSegmentKiller;
 import org.apache.druid.segment.realtime.appenderator.SegmentWithState.SegmentState;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.SegmentAndSchema;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -150,7 +151,7 @@ public class BatchAppenderatorDriver extends BaseAppenderatorDriver
 
     // Sanity check
     final Map<SegmentIdWithShardSpec, DataSegment> pushedSegmentIdToSegmentMap = segmentsAndCommitMetadata
-        .getSegments()
+        .getSegmentAndSchemas()
         .stream()
         .collect(Collectors.toMap(SegmentIdWithShardSpec::fromDataSegment, Function.identity()));
 
@@ -202,10 +203,11 @@ public class BatchAppenderatorDriver extends BaseAppenderatorDriver
       @Nullable final Set<DataSegment> segmentsToBeDropped,
       @Nullable final Set<DataSegment> tombstones,
       final TransactionalSegmentPublisher publisher,
-      final Function<Set<DataSegment>, Set<DataSegment>> outputSegmentsAnnotateFunction
+      final Function<Set<SegmentAndSchema>, Set<SegmentAndSchema>> outputSegmentsAnnotateFunction
   )
   {
     final Map<String, SegmentsForSequence> snapshot;
+    // todo get the segment schema from the previous step
     synchronized (segments) {
       snapshot = ImmutableMap.copyOf(segments);
     }

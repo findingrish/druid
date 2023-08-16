@@ -35,6 +35,7 @@ import org.apache.druid.java.util.emitter.EmittingLogger;
 import org.apache.druid.segment.SegmentUtils;
 import org.apache.druid.segment.realtime.appenderator.TransactionalSegmentPublisher;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.SegmentAndSchema;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -338,7 +339,7 @@ public class SequenceMetadata<PartitionIdType, SequenceOffsetType>
     public SegmentPublishResult publishAnnotatedSegments(
         @Nullable Set<DataSegment> mustBeNullOrEmptyOverwriteSegments,
         @Nullable Set<DataSegment> mustBeNullOrEmptyDropSegments,
-        Set<DataSegment> segmentsToPush,
+        Set<SegmentAndSchema> segmentsToPush,
         @Nullable Object commitMetadata
     ) throws IOException
     {
