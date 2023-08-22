@@ -24,6 +24,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.druid.client.BrokerInternalQueryConfig;
 import org.apache.druid.client.BrokerSegmentWatcherConfig;
 import org.apache.druid.client.BrokerServerView;
@@ -34,6 +36,7 @@ import org.apache.druid.client.ServerView.CallbackAction;
 import org.apache.druid.client.ServerView.SegmentCallback;
 import org.apache.druid.client.ServerView.ServerRemovedCallback;
 import org.apache.druid.client.TimelineServerView.TimelineCallback;
+import org.apache.druid.client.coordinator.NoopCoordinatorClient;
 import org.apache.druid.client.selector.HighestPriorityTierSelectorStrategy;
 import org.apache.druid.client.selector.RandomServerSelectorStrategy;
 import org.apache.druid.jackson.DefaultObjectMapper;
@@ -42,6 +45,7 @@ import org.apache.druid.java.util.common.NonnullPair;
 import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.concurrent.Execs;
 import org.apache.druid.java.util.http.client.HttpClient;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.query.QueryToolChestWarehouse;
 import org.apache.druid.query.QueryWatcher;
 import org.apache.druid.query.TableDataSource;
@@ -56,7 +60,6 @@ import org.apache.druid.server.coordination.DruidServerMetadata;
 import org.apache.druid.server.coordination.ServerType;
 import org.apache.druid.server.metrics.NoopServiceEmitter;
 import org.apache.druid.server.security.NoopEscalator;
-import org.apache.druid.sql.calcite.table.DatasourceTable;
 import org.apache.druid.sql.calcite.util.CalciteTests;
 import org.apache.druid.sql.calcite.util.SpecificSegmentsQuerySegmentWalker;
 import org.apache.druid.timeline.DataSegment;
@@ -73,6 +76,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -141,11 +145,19 @@ public class SegmentDataCacheConcurrencyTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        new NoopCoordinatorClient()
+        {
+          @Override
+          public ListenableFuture<List<PhysicalDatasourceMetadata>> fetchDatasourceMetadata(List<String> datasources)
+          {
+            return Futures.immediateFuture(Collections.emptyList());
+          }
+        }
     )
     {
       @Override
-      DatasourceTable.PhysicalDatasourceMetadata buildDruidTable(final String dataSource)
+      PhysicalDatasourceMetadata buildDruidTable(final String dataSource)
       {
         doInLock(() -> {
           try {
@@ -251,11 +263,12 @@ public class SegmentDataCacheConcurrencyTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        null
     )
     {
       @Override
-      DatasourceTable.PhysicalDatasourceMetadata buildDruidTable(final String dataSource)
+      PhysicalDatasourceMetadata buildDruidTable(final String dataSource)
       {
         doInLock(() -> {
           try {

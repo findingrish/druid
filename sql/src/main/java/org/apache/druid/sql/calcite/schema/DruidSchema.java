@@ -20,6 +20,7 @@
 package org.apache.druid.sql.calcite.schema;
 
 import org.apache.calcite.schema.Table;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.sql.calcite.table.DatasourceTable;
 
 import javax.inject.Inject;
@@ -55,7 +56,7 @@ public class DruidSchema extends AbstractTableSchema
     if (druidSchemaManager != null) {
       return druidSchemaManager.getTable(name);
     } else {
-      DatasourceTable.PhysicalDatasourceMetadata dsMetadata = segmentCache.getDatasource(name);
+      PhysicalDatasourceMetadata dsMetadata = segmentCache.getDatasource(name);
       return dsMetadata == null ? null : new DatasourceTable(dsMetadata);
     }
   }

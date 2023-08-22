@@ -36,6 +36,8 @@ import com.google.inject.Inject;
 import org.apache.druid.client.BrokerInternalQueryConfig;
 import org.apache.druid.client.ServerView;
 import org.apache.druid.client.TimelineServerView;
+import org.apache.druid.client.coordinator.CoordinatorClient;
+import org.apache.druid.common.guava.FutureUtils;
 import org.apache.druid.guice.ManageLifecycle;
 import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.IAE;
@@ -49,6 +51,7 @@ import org.apache.druid.java.util.common.lifecycle.LifecycleStop;
 import org.apache.druid.java.util.emitter.EmittingLogger;
 import org.apache.druid.java.util.emitter.service.ServiceEmitter;
 import org.apache.druid.java.util.emitter.service.ServiceMetricEvent;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.query.DruidMetrics;
 import org.apache.druid.query.GlobalTableDataSource;
 import org.apache.druid.query.QueryContexts;
@@ -77,8 +80,10 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -124,12 +129,13 @@ public class SegmentMetadataCache
   private final ExecutorService callbackExec;
   private final ServiceEmitter emitter;
   private final ColumnTypeMergePolicy columnTypeMergePolicy;
+  private final CoordinatorClient coordinatorClient;
 
   /**
    * Map of DataSource -> DruidTable.
    * This map can be accessed by {@link #cacheExec} and {@link #callbackExec} threads.
    */
-  private final ConcurrentMap<String, DatasourceTable.PhysicalDatasourceMetadata> tables = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, PhysicalDatasourceMetadata> tables = new ConcurrentHashMap<>();
 
   /**
    * DataSource -> Segment -> AvailableSegmentMetadata(contains RowSignature) for that segment.
@@ -228,7 +234,8 @@ public class SegmentMetadataCache
       final SegmentMetadataCacheConfig config,
       final Escalator escalator,
       final BrokerInternalQueryConfig brokerInternalQueryConfig,
-      final ServiceEmitter emitter
+      final ServiceEmitter emitter,
+      final CoordinatorClient coordinatorClient
   )
   {
     this.queryLifecycleFactory = Preconditions.checkNotNull(queryLifecycleFactory, "queryLifecycleFactory");
@@ -242,6 +249,7 @@ public class SegmentMetadataCache
     this.escalator = escalator;
     this.brokerInternalQueryConfig = brokerInternalQueryConfig;
     this.emitter = emitter;
+    this.coordinatorClient = coordinatorClient;
 
     initServerViewTimelineCallback(serverView);
   }
@@ -406,6 +414,30 @@ public class SegmentMetadataCache
   @VisibleForTesting
   void refresh(final Set<SegmentId> segmentsToRefresh, final Set<String> dataSourcesToRebuild) throws IOException
   {
+    Set<String> dataSourcesToQuery = new HashSet<>(dataSourcesToRebuild);
+    segmentsToRefresh.forEach(segment -> dataSourcesToQuery.add(segment.getDataSource()));
+
+    // fetch table schema from coordinator
+    log.info("polling coordinator in smc");
+    Map<String, PhysicalDatasourceMetadata> updatedDatasourceMetadata = new HashMap<>();
+    for (List<String> partition : Iterables.partition(dataSourcesToQuery, 10)) {
+      FutureUtils.getUnchecked(coordinatorClient.fetchDatasourceMetadata(partition), true)
+                 .forEach(item -> updatedDatasourceMetadata.put(item.dataSource().getName(), item));
+    }
+
+    log.info("queried table schema in smc %s", updatedDatasourceMetadata);
+
+    // remove segments for datasource for which coordinator returned table schema
+    segmentsToRefresh.forEach(segment -> {
+      if (updatedDatasourceMetadata.containsKey(segment.getDataSource())) {
+        segmentsToRefresh.remove(segment);
+      }
+    });
+
+    dataSourcesToRebuild.removeAll(updatedDatasourceMetadata.keySet());
+
+    tables.putAll(updatedDatasourceMetadata);
+
     // Refresh the segments.
     final Set<SegmentId> refreshed = refreshSegments(segmentsToRefresh);
 
@@ -421,13 +453,13 @@ public class SegmentMetadataCache
 
     // Rebuild the dataSources.
     for (String dataSource : dataSourcesToRebuild) {
-      final DatasourceTable.PhysicalDatasourceMetadata druidTable = buildDruidTable(dataSource);
+      final PhysicalDatasourceMetadata druidTable = buildDruidTable(dataSource);
       if (druidTable == null) {
         log.info("dataSource [%s] no longer exists, all metadata removed.", dataSource);
         tables.remove(dataSource);
         continue;
       }
-      final DatasourceTable.PhysicalDatasourceMetadata oldTable = tables.put(dataSource, druidTable);
+      final PhysicalDatasourceMetadata oldTable = tables.put(dataSource, druidTable);
       final String description = druidTable.dataSource().isGlobal() ? "global dataSource" : "dataSource";
       if (oldTable == null || !oldTable.rowSignature().equals(druidTable.rowSignature())) {
         log.info("%s [%s] has new signature: %s.", description, dataSource, druidTable.rowSignature());
@@ -449,7 +481,7 @@ public class SegmentMetadataCache
     initialized.await();
   }
 
-  protected DatasourceTable.PhysicalDatasourceMetadata getDatasource(String name)
+  protected PhysicalDatasourceMetadata getDatasource(String name)
   {
     return tables.get(name);
   }
@@ -808,7 +840,7 @@ public class SegmentMetadataCache
 
   @VisibleForTesting
   @Nullable
-  DatasourceTable.PhysicalDatasourceMetadata buildDruidTable(final String dataSource)
+  PhysicalDatasourceMetadata buildDruidTable(final String dataSource)
   {
     ConcurrentSkipListMap<SegmentId, AvailableSegmentMetadata> segmentsMap = segmentMetadataInfo.get(dataSource);
 
@@ -851,7 +883,7 @@ public class SegmentMetadataCache
     } else {
       tableDataSource = new TableDataSource(dataSource);
     }
-    return new DatasourceTable.PhysicalDatasourceMetadata(tableDataSource, builder.build(), isJoinable, isBroadcast);
+    return new PhysicalDatasourceMetadata(tableDataSource, builder.build(), isJoinable, isBroadcast);
   }
 
   @VisibleForTesting

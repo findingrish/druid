@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import junitparams.converters.Nullable;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
@@ -42,6 +43,7 @@ import org.apache.druid.client.FilteredServerInventoryView;
 import org.apache.druid.client.ImmutableDruidDataSource;
 import org.apache.druid.client.ImmutableDruidServer;
 import org.apache.druid.client.TimelineServerView;
+import org.apache.druid.client.coordinator.NoopCoordinatorClient;
 import org.apache.druid.common.config.NullHandling;
 import org.apache.druid.data.input.InputRow;
 import org.apache.druid.discovery.DataNodeService;
@@ -64,6 +66,7 @@ import org.apache.druid.java.util.http.client.Request;
 import org.apache.druid.java.util.http.client.response.HttpResponseHandler;
 import org.apache.druid.java.util.http.client.response.InputStreamFullResponseHolder;
 import org.apache.druid.java.util.http.client.response.StringFullResponseHolder;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.query.QueryRunnerFactoryConglomerate;
 import org.apache.druid.query.aggregation.CountAggregatorFactory;
 import org.apache.druid.query.aggregation.DoubleSumAggregatorFactory;
@@ -168,6 +171,7 @@ public class SystemSchemaTest extends CalciteTestBase
   private MetadataSegmentView metadataView;
   private DruidNodeDiscoveryProvider druidNodeDiscoveryProvider;
   private FilteredServerInventoryView serverInventoryView;
+  private MetadataSegmentView metadataSegmentView;
 
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -259,7 +263,15 @@ public class SystemSchemaTest extends CalciteTestBase
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        new NoopCoordinatorClient()
+        {
+          @Override
+          public ListenableFuture<List<PhysicalDatasourceMetadata>> fetchDatasourceMetadata(List<String> datasources)
+          {
+            return Futures.immediateFuture(Collections.emptyList());
+          }
+        }
     );
     cache.start();
     cache.awaitInitialization();

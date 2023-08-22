@@ -49,6 +49,7 @@ import org.apache.druid.java.util.emitter.EmittingLogger;
 import org.apache.druid.timeline.DataSegment;
 import org.apache.druid.timeline.Partitions;
 import org.apache.druid.timeline.SegmentId;
+import org.apache.druid.timeline.SegmentSchema;
 import org.apache.druid.timeline.SegmentTimeline;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.joda.time.DateTime;
@@ -60,15 +61,14 @@ import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionStatus;
-import org.skife.jdbi.v2.tweak.ResultSetMapper;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -152,6 +152,7 @@ public class SqlSegmentsMetadataManager implements SegmentsMetadataManager
   private final Duration periodicPollDelay;
   private final Supplier<MetadataStorageTablesConfig> dbTables;
   private final SQLMetadataConnector connector;
+  private final PhysicalDatasourceMetadataBuilder physicalDatasourceMetadataBuilder;
 
   /**
    * This field is made volatile to avoid "ghost secondary reads" that may result in NPE, see
@@ -234,13 +235,15 @@ public class SqlSegmentsMetadataManager implements SegmentsMetadataManager
       ObjectMapper jsonMapper,
       Supplier<SegmentsMetadataManagerConfig> config,
       Supplier<MetadataStorageTablesConfig> dbTables,
-      SQLMetadataConnector connector
+      SQLMetadataConnector connector,
+      PhysicalDatasourceMetadataBuilder physicalDatasourceMetadataBuilder
   )
   {
     this.jsonMapper = jsonMapper;
     this.periodicPollDelay = config.get().getPollDuration().toStandardDuration();
     this.dbTables = dbTables;
     this.connector = connector;
+    this.physicalDatasourceMetadataBuilder = physicalDatasourceMetadataBuilder;
   }
 
   /**
@@ -882,31 +885,57 @@ public class SqlSegmentsMetadataManager implements SegmentsMetadataManager
     //
     // setting connection to read-only will allow some database such as MySQL
     // to automatically use read-only transaction mode, further optimizing the query
+    Map<String, Set<SegmentSchema>> dataSourceSchemaMap = new HashMap<>();
     final List<DataSegment> segments = connector.inReadOnlyTransaction(
         new TransactionCallback<List<DataSegment>>()
         {
           @Override
           public List<DataSegment> inTransaction(Handle handle, TransactionStatus status)
           {
+            // todo put this behind feature flag?
+            List<String> schemaIds = handle
+                .createQuery(StringUtils.format("SELECT DISTINCT(schema_id) FROM %s WHERE used=true", getSegmentsTable()))
+                .mapTo(String.class)
+                .list();
+            // check correctness
+            handle
+                .createQuery(StringUtils.format(
+                    "SELECT datasource, payload FROM %s WHERE fingerprint in (%s)",
+                    getSegmentSchemaTable(),
+                    schemaIds.stream().map(str -> String.format("'%s'", str)).collect(Collectors.joining(", "))
+                ))
+                .setFetchSize(connector.getStreamingFetchSize())
+                .map(
+                    (index, r, ctx) -> {
+                      try {
+                        SegmentSchema segmentSchema = jsonMapper.readValue(
+                            r.getBytes("payload"),
+                            SegmentSchema.class
+                        );
+                        String dataSource = r.getString("datasource");
+                        dataSourceSchemaMap.computeIfAbsent(dataSource, set -> new HashSet<>()).add(segmentSchema);
+                      }
+                      catch (IOException e) {
+                        log.makeAlert(e, "Failed to read segment schema from db.").emit();
+                      }
+                      return null;
+                    })
+                .list();
+            log.info("fetched schemas from the db: %s", dataSourceSchemaMap);
             return handle
                 .createQuery(StringUtils.format("SELECT payload FROM %s WHERE used=true", getSegmentsTable()))
                 .setFetchSize(connector.getStreamingFetchSize())
                 .map(
-                    new ResultSetMapper<DataSegment>()
-                    {
-                      @Override
-                      public DataSegment map(int index, ResultSet r, StatementContext ctx) throws SQLException
-                      {
-                        try {
-                          DataSegment segment = jsonMapper.readValue(r.getBytes("payload"), DataSegment.class);
-                          return replaceWithExistingSegmentIfPresent(segment);
-                        }
-                        catch (IOException e) {
-                          log.makeAlert(e, "Failed to read segment from db.").emit();
-                          // If one entry in database is corrupted doPoll() should continue to work overall. See
-                          // filter by `Objects::nonNull` below in this method.
-                          return null;
-                        }
+                    (index, r, ctx) -> {
+                      try {
+                        DataSegment segment = jsonMapper.readValue(r.getBytes("payload"), DataSegment.class);
+                        return replaceWithExistingSegmentIfPresent(segment);
+                      }
+                      catch (IOException e) {
+                        log.makeAlert(e, "Failed to read segment from db.").emit();
+                        // If one entry in database is corrupted doPoll() should continue to work overall. See
+                        // filter by `Objects::nonNull` below in this method.
+                        return null;
                       }
                     }
                 )
@@ -935,9 +964,15 @@ public class SqlSegmentsMetadataManager implements SegmentsMetadataManager
     } else {
       log.info("Polled and found %,d segments in the database", segments.size());
     }
+    Map<String, PhysicalDatasourceMetadata> datasourceMetadataMap = new HashMap<>();
+    for (Map.Entry<String, Set<SegmentSchema>> entry : dataSourceSchemaMap.entrySet()) {
+      datasourceMetadataMap.put(entry.getKey(), physicalDatasourceMetadataBuilder.buildDruidTable(entry.getKey(), entry.getValue()));
+    }
+    log.info("converted to physical datasource metadata %s", datasourceMetadataMap);
     dataSourcesSnapshot = DataSourcesSnapshot.fromUsedSegments(
         Iterables.filter(segments, Objects::nonNull), // Filter corrupted entries (see above in this method).
-        dataSourceProperties
+        dataSourceProperties,
+        datasourceMetadataMap
     );
   }
 
@@ -972,6 +1007,11 @@ public class SqlSegmentsMetadataManager implements SegmentsMetadataManager
   private String getSegmentsTable()
   {
     return dbTables.get().getSegmentsTable();
+  }
+
+  private String getSegmentSchemaTable()
+  {
+    return dbTables.get().getSegmentSchemaTable();
   }
 
   @Override

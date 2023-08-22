@@ -26,6 +26,7 @@ import org.apache.druid.common.guava.FutureUtils;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.jackson.JacksonUtils;
 import org.apache.druid.java.util.http.client.response.BytesFullResponseHandler;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.query.SegmentDescriptor;
 import org.apache.druid.rpc.RequestBuilder;
 import org.apache.druid.rpc.ServiceClient;
@@ -35,6 +36,7 @@ import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.joda.time.Interval;
 
 import java.util.List;
+import java.util.Map;
 
 public class CoordinatorClientImpl implements CoordinatorClient
 {
@@ -107,8 +109,32 @@ public class CoordinatorClientImpl implements CoordinatorClient
   }
 
   @Override
+  public ListenableFuture<List<PhysicalDatasourceMetadata>> fetchDatasourceMetadata(List<String> dataSources)
+  {
+    String path = "/druid/coordinator/v1/metadata/datasourceMetadata";
+    if (!dataSources.isEmpty()) {
+      final StringBuilder sb = new StringBuilder();
+      for (String ds : dataSources) {
+        sb.append("datasources=").append(ds).append("&");
+      }
+      sb.setLength(sb.length() - 1);
+      path = "/druid/coordinator/v1/metadata/datasourceMetadata?" + sb;
+    }
+
+    return FutureUtils.transform(
+        client.asyncRequest(
+            new RequestBuilder(HttpMethod.GET, path),
+            new BytesFullResponseHandler()
+        ),
+        holder -> JacksonUtils.readValue(jsonMapper, holder.getContent(), new TypeReference<List<PhysicalDatasourceMetadata>>() {})
+    );
+  }
+
+  @Override
   public CoordinatorClientImpl withRetryPolicy(ServiceRetryPolicy retryPolicy)
   {
     return new CoordinatorClientImpl(client.withRetryPolicy(retryPolicy), jsonMapper);
   }
+
+
 }

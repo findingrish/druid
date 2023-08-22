@@ -31,6 +31,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 
 import java.util.stream.Collectors;
 
@@ -53,11 +55,19 @@ public class SqlSegmentsMetadataManagerEmptyTest
     TestDerbyConnector connector = derbyConnectorRule.getConnector();
     SegmentsMetadataManagerConfig config = new SegmentsMetadataManagerConfig();
     config.setPollDuration(Period.seconds(1));
+    PhysicalDatasourceMetadataBuilder physicalDatasourceMetadataBuilder = Mockito.mock(PhysicalDatasourceMetadataBuilder.class);
+    Mockito.doReturn(Mockito.mock(PhysicalDatasourceMetadata.class))
+           .when(physicalDatasourceMetadataBuilder.buildDruidTable(
+               ArgumentMatchers.anyString(),
+               ArgumentMatchers.anySet()
+           ));
+
     sqlSegmentsMetadataManager = new SqlSegmentsMetadataManager(
         jsonMapper,
         Suppliers.ofInstance(config),
         derbyConnectorRule.metadataTablesConfigSupplier(),
-        connector
+        connector,
+        physicalDatasourceMetadataBuilder
     );
     sqlSegmentsMetadataManager.start();
 

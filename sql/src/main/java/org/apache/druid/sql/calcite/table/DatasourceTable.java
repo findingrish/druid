@@ -19,13 +19,11 @@
 
 package org.apache.druid.sql.calcite.table;
 
-import com.google.common.base.Preconditions;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.query.DataSource;
-import org.apache.druid.query.TableDataSource;
-import org.apache.druid.segment.column.RowSignature;
 
 import java.util.Objects;
 
@@ -44,81 +42,6 @@ public class DatasourceTable extends DruidTable
    * published in the Coordinator. Used only for datasources, since only
    * datasources are computed from segments.
    */
-  public static class PhysicalDatasourceMetadata
-  {
-    private final TableDataSource dataSource;
-    private final RowSignature rowSignature;
-    private final boolean joinable;
-    private final boolean broadcast;
-
-    public PhysicalDatasourceMetadata(
-        final TableDataSource dataSource,
-        final RowSignature rowSignature,
-        final boolean isJoinable,
-        final boolean isBroadcast
-    )
-    {
-      this.dataSource = Preconditions.checkNotNull(dataSource, "dataSource");
-      this.rowSignature = Preconditions.checkNotNull(rowSignature, "rowSignature");
-      this.joinable = isJoinable;
-      this.broadcast = isBroadcast;
-    }
-
-    public TableDataSource dataSource()
-    {
-      return dataSource;
-    }
-
-    public RowSignature rowSignature()
-    {
-      return rowSignature;
-    }
-
-    public boolean isJoinable()
-    {
-      return joinable;
-    }
-
-    public boolean isBroadcast()
-    {
-      return broadcast;
-    }
-
-    @Override
-    public boolean equals(Object o)
-    {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-
-      PhysicalDatasourceMetadata that = (PhysicalDatasourceMetadata) o;
-
-      if (!Objects.equals(dataSource, that.dataSource)) {
-        return false;
-      }
-      return Objects.equals(rowSignature, that.rowSignature);
-    }
-
-    @Override
-    public int hashCode()
-    {
-      int result = dataSource != null ? dataSource.hashCode() : 0;
-      result = 31 * result + (rowSignature != null ? rowSignature.hashCode() : 0);
-      return result;
-    }
-
-    @Override
-    public String toString()
-    {
-      return "DatasourceMetadata{" +
-             "dataSource=" + dataSource +
-             ", rowSignature=" + rowSignature +
-             '}';
-    }
-  }
 
   private final PhysicalDatasourceMetadata physicalMetadata;
 

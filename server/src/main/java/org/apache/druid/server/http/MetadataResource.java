@@ -28,6 +28,8 @@ import org.apache.druid.client.DataSourcesSnapshot;
 import org.apache.druid.client.ImmutableDruidDataSource;
 import org.apache.druid.indexing.overlord.IndexerMetadataStorageCoordinator;
 import org.apache.druid.indexing.overlord.Segments;
+import org.apache.druid.java.util.common.logger.Logger;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.metadata.SegmentsMetadataManager;
 import org.apache.druid.server.JettyUtils;
 import org.apache.druid.server.coordinator.DruidCoordinator;
@@ -55,6 +57,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -65,6 +68,8 @@ import java.util.stream.Stream;
 @Path("/druid/coordinator/v1/metadata")
 public class MetadataResource
 {
+  public static final Logger logger = new Logger(MetadataResource.class);
+
   private final SegmentsMetadataManager segmentsMetadataManager;
   private final IndexerMetadataStorageCoordinator metadataStorageCoordinator;
   private final AuthorizerMapper authorizerMapper;
@@ -301,5 +306,24 @@ public class MetadataResource
       return Response.status(Response.Status.OK).entity(segment).build();
     }
     return Response.status(Response.Status.NOT_FOUND).build();
+  }
+
+  @GET
+  @Path("/datasourceMetadata")
+  @Produces(MediaType.APPLICATION_JSON)
+  @ResourceFilters(DatasourceResourceFilter.class)
+  public Response getDatasourceMetadata(
+      @QueryParam("datasources") final @Nullable Set<String> dataSources
+  )
+  {
+    DataSourcesSnapshot dataSourcesSnapshot = segmentsMetadataManager.getSnapshotOfDataSourcesWithAllUsedSegments();
+    Map<String, PhysicalDatasourceMetadata> datasourceMetadataMap = dataSourcesSnapshot.getDatasourceMetadataMap();
+
+    if (null != dataSources) {
+      datasourceMetadataMap.keySet().retainAll(dataSources);
+    }
+
+    logger.info("Returnning api response %s", datasourceMetadataMap);
+    return Response.status(Response.Status.OK).entity(datasourceMetadataMap.values()).build();
   }
 }

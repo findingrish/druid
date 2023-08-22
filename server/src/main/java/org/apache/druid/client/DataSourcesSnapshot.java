@@ -21,7 +21,7 @@ package org.apache.druid.client;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.metadata.SqlSegmentsMetadataManager;
 import org.apache.druid.timeline.DataSegment;
 import org.apache.druid.timeline.SegmentTimeline;
@@ -43,6 +43,21 @@ public class DataSourcesSnapshot
 {
   public static DataSourcesSnapshot fromUsedSegments(
       Iterable<DataSegment> segments,
+      ImmutableMap<String, String> dataSourceProperties,
+      Map<String, PhysicalDatasourceMetadata> datasourceMetadataMap
+  )
+  {
+    Map<String, DruidDataSource> dataSources = new HashMap<>();
+    segments.forEach(segment -> {
+      dataSources
+          .computeIfAbsent(segment.getDataSource(), dsName -> new DruidDataSource(dsName, dataSourceProperties))
+          .addSegmentIfAbsent(segment);
+    });
+    return new DataSourcesSnapshot(CollectionUtils.mapValues(dataSources, DruidDataSource::toImmutableDruidDataSource), datasourceMetadataMap);
+  }
+
+  public static DataSourcesSnapshot fromUsedSegments(
+      Iterable<DataSegment> segments,
       ImmutableMap<String, String> dataSourceProperties
   )
   {
@@ -52,49 +67,39 @@ public class DataSourcesSnapshot
           .computeIfAbsent(segment.getDataSource(), dsName -> new DruidDataSource(dsName, dataSourceProperties))
           .addSegmentIfAbsent(segment);
     });
-    return new DataSourcesSnapshot(CollectionUtils.mapValues(dataSources, DruidDataSource::toImmutableDruidDataSource));
-  }
-
-  public static DataSourcesSnapshot fromUsedSegmentsTimelines(
-      Map<String, SegmentTimeline> usedSegmentsTimelinesPerDataSource,
-      ImmutableMap<String, String> dataSourceProperties
-  )
-  {
-    Map<String, ImmutableDruidDataSource> dataSourcesWithAllUsedSegments =
-        Maps.newHashMapWithExpectedSize(usedSegmentsTimelinesPerDataSource.size());
-    usedSegmentsTimelinesPerDataSource.forEach(
-        (dataSourceName, usedSegmentsTimeline) -> {
-          DruidDataSource dataSource = new DruidDataSource(dataSourceName, dataSourceProperties);
-          usedSegmentsTimeline.iterateAllObjects().forEach(dataSource::addSegment);
-          dataSourcesWithAllUsedSegments.put(dataSourceName, dataSource.toImmutableDruidDataSource());
-        }
-    );
-    return new DataSourcesSnapshot(dataSourcesWithAllUsedSegments, usedSegmentsTimelinesPerDataSource);
+    return new DataSourcesSnapshot(CollectionUtils.mapValues(dataSources, DruidDataSource::toImmutableDruidDataSource), ImmutableMap.of());
   }
 
   private final Map<String, ImmutableDruidDataSource> dataSourcesWithAllUsedSegments;
   private final Map<String, SegmentTimeline> usedSegmentsTimelinesPerDataSource;
   private final ImmutableSet<DataSegment> overshadowedSegments;
+  private final Map<String, PhysicalDatasourceMetadata> datasourceMetadataMap;
 
-  public DataSourcesSnapshot(Map<String, ImmutableDruidDataSource> dataSourcesWithAllUsedSegments)
+  public DataSourcesSnapshot(
+      Map<String, ImmutableDruidDataSource> dataSourcesWithAllUsedSegments,
+      Map<String, PhysicalDatasourceMetadata> datasourceMetadataMap
+  )
   {
     this(
         dataSourcesWithAllUsedSegments,
         CollectionUtils.mapValues(
             dataSourcesWithAllUsedSegments,
             dataSource -> SegmentTimeline.forSegments(dataSource.getSegments())
-        )
+        ),
+        datasourceMetadataMap
     );
   }
 
   private DataSourcesSnapshot(
       Map<String, ImmutableDruidDataSource> dataSourcesWithAllUsedSegments,
-      Map<String, SegmentTimeline> usedSegmentsTimelinesPerDataSource
+      Map<String, SegmentTimeline> usedSegmentsTimelinesPerDataSource,
+      Map<String, PhysicalDatasourceMetadata> datasourceMetadataMap
   )
   {
     this.dataSourcesWithAllUsedSegments = dataSourcesWithAllUsedSegments;
     this.usedSegmentsTimelinesPerDataSource = usedSegmentsTimelinesPerDataSource;
     this.overshadowedSegments = ImmutableSet.copyOf(determineOvershadowedSegments());
+    this.datasourceMetadataMap = datasourceMetadataMap;
   }
 
   public Collection<ImmutableDruidDataSource> getDataSourcesWithAllUsedSegments()
@@ -142,6 +147,11 @@ public class DataSourcesSnapshot
         .stream()
         .flatMap(dataSource -> dataSource.getSegments().stream())
         .iterator();
+  }
+
+  public Map<String, PhysicalDatasourceMetadata> getDatasourceMetadataMap()
+  {
+    return datasourceMetadataMap;
   }
 
   /**

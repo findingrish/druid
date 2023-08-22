@@ -34,13 +34,16 @@ public class SqlSegmentsMetadataManagerProvider implements SegmentsMetadataManag
   private final SQLMetadataConnector connector;
   private final Lifecycle lifecycle;
 
+  private final PhysicalDatasourceMetadataBuilder physicalDatasourceMetadataBuilder;
+
   @Inject
   public SqlSegmentsMetadataManagerProvider(
       ObjectMapper jsonMapper,
       Supplier<SegmentsMetadataManagerConfig> config,
       Supplier<MetadataStorageTablesConfig> storageConfig,
       SQLMetadataConnector connector,
-      Lifecycle lifecycle
+      Lifecycle lifecycle,
+      PhysicalDatasourceMetadataBuilder physicalDatasourceMetadataBuilder
   )
   {
     this.jsonMapper = jsonMapper;
@@ -48,6 +51,7 @@ public class SqlSegmentsMetadataManagerProvider implements SegmentsMetadataManag
     this.storageConfig = storageConfig;
     this.connector = connector;
     this.lifecycle = lifecycle;
+    this.physicalDatasourceMetadataBuilder = physicalDatasourceMetadataBuilder;
   }
 
   @Override
@@ -60,6 +64,8 @@ public class SqlSegmentsMetadataManagerProvider implements SegmentsMetadataManag
           public void start()
           {
             connector.createSegmentTable();
+            // todo double check
+            connector.createSegmentSchemaTable();
           }
 
           @Override
@@ -74,7 +80,8 @@ public class SqlSegmentsMetadataManagerProvider implements SegmentsMetadataManag
         jsonMapper,
         config,
         storageConfig,
-        connector
+        connector,
+        physicalDatasourceMetadataBuilder
     );
   }
 }

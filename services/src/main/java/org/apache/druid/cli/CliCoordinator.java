@@ -45,6 +45,7 @@ import org.apache.druid.discovery.NodeRole;
 import org.apache.druid.guice.ConditionalMultibind;
 import org.apache.druid.guice.ConfigProvider;
 import org.apache.druid.guice.Jerseys;
+import org.apache.druid.guice.JoinableFactoryModule;
 import org.apache.druid.guice.JsonConfigProvider;
 import org.apache.druid.guice.JsonConfigurator;
 import org.apache.druid.guice.LazySingleton;
@@ -173,6 +174,7 @@ public class CliCoordinator extends ServerRunnable
     List<Module> modules = new ArrayList<>();
 
     modules.add(JettyHttpClientModule.global());
+    modules.add(new JoinableFactoryModule());
 
     modules.add(
         new Module()

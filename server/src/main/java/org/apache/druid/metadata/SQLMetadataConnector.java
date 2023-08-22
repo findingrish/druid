@@ -295,6 +295,7 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
                 + "  partitioned BOOLEAN NOT NULL,\n"
                 + "  version VARCHAR(255) NOT NULL,\n"
                 + "  used BOOLEAN NOT NULL,\n"
+                + "  schema_id VARCHAR(255) DEFAULT NULL,\n"
                 + "  payload %2$s NOT NULL,\n"
                 + "  PRIMARY KEY (id)\n"
                 + ")",
@@ -480,6 +481,27 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
                 + "  PRIMARY KEY (id)\n"
                 + ")",
                 tableName, getSerialType(), getPayloadType()
+            ),
+            StringUtils.format("CREATE INDEX idx_%1$s_spec_id ON %1$s(spec_id)", tableName)
+        )
+    );
+  }
+
+  public void createSegmentSchemaTable(final String tableName)
+  {
+    createTable(
+        tableName,
+        ImmutableList.of(
+            StringUtils.format(
+                "CREATE TABLE %1$s (\n"
+                + "  fingerprint VARCHAR(255) NOT NULL,\n"
+                + "  created_date VARCHAR(255) NOT NULL,\n"
+                + "  datasource VARCHAR(255) %2$s NOT NULL,\n"
+                + "  realtime BOOLEAN NOT NULL,\n"
+                + "  payload %3$s NOT NULL,\n"
+                + "  PRIMARY KEY (fingerprint)\n"
+                + ")",
+                tableName, getCollation(), getPayloadType()
             ),
             StringUtils.format("CREATE INDEX idx_%1$s_spec_id ON %1$s(spec_id)", tableName)
         )
@@ -690,6 +712,14 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
     );
   }
 
+  @Override
+  public void createSegmentSchemaTable()
+  {
+    if (config.get().isCreateTables()) {
+      createSegmentSchemaTable(tablesConfigSupplier.get().getSegmentSchemaTable());
+    }
+  }
+
   public @Nullable byte[] lookupWithHandle(
       final Handle handle,
       final String tableName,
@@ -718,6 +748,8 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
 
     return matched.get(0);
   }
+
+
 
   public MetadataStorageConnectorConfig getConfig()
   {

@@ -19,7 +19,7 @@
 
 package org.apache.druid.sql.calcite.planner;
 
-import org.apache.druid.sql.calcite.table.DatasourceTable.PhysicalDatasourceMetadata;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.sql.calcite.table.DruidTable;
 
 import java.util.Collections;

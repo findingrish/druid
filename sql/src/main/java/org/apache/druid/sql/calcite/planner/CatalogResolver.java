@@ -19,6 +19,7 @@
 
 package org.apache.druid.sql.calcite.planner;
 
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.sql.calcite.table.DatasourceTable;
 import org.apache.druid.sql.calcite.table.DruidTable;
 
@@ -46,7 +47,7 @@ public interface CatalogResolver
     @Override
     public DruidTable resolveDatasource(
         final String tableName,
-        final DatasourceTable.PhysicalDatasourceMetadata dsMetadata
+        final PhysicalDatasourceMetadata dsMetadata
     )
     {
       return dsMetadata == null ? null : new DatasourceTable(dsMetadata);
@@ -67,7 +68,7 @@ public interface CatalogResolver
 
   DruidTable resolveDatasource(
       String tableName,
-      DatasourceTable.PhysicalDatasourceMetadata dsMetadata
+      PhysicalDatasourceMetadata dsMetadata
   );
 
   Set<String> getTableNames(Set<String> datasourceNames);

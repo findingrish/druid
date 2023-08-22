@@ -34,6 +34,8 @@ import org.apache.druid.java.util.emitter.service.ServiceEmitter;
 import org.apache.druid.metadata.IndexerSQLMetadataStorageCoordinator;
 import org.apache.druid.metadata.MetadataStorageConnectorConfig;
 import org.apache.druid.metadata.MetadataStorageTablesConfig;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
+import org.apache.druid.metadata.PhysicalDatasourceMetadataBuilder;
 import org.apache.druid.metadata.SegmentsMetadataManager;
 import org.apache.druid.metadata.SegmentsMetadataManagerConfig;
 import org.apache.druid.metadata.SqlSegmentsMetadataManager;
@@ -42,6 +44,8 @@ import org.apache.druid.server.metrics.NoopServiceEmitter;
 import org.easymock.EasyMock;
 import org.joda.time.Period;
 import org.junit.rules.ExternalResource;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 
 public class TaskActionTestKit extends ExternalResource
 {
@@ -96,11 +100,20 @@ public class TaskActionTestKit extends ExternalResource
       }
     };
     taskLockbox = new TaskLockbox(taskStorage, metadataStorageCoordinator);
+
+    PhysicalDatasourceMetadataBuilder physicalDatasourceMetadataBuilder = Mockito.mock(PhysicalDatasourceMetadataBuilder.class);
+    Mockito.doReturn(Mockito.mock(PhysicalDatasourceMetadata.class))
+           .when(physicalDatasourceMetadataBuilder.buildDruidTable(
+               ArgumentMatchers.anyString(),
+               ArgumentMatchers.anySet()
+           ));
+
     segmentsMetadataManager = new SqlSegmentsMetadataManager(
         objectMapper,
         Suppliers.ofInstance(new SegmentsMetadataManagerConfig()),
         Suppliers.ofInstance(metadataStorageTablesConfig),
-        testDerbyConnector
+        testDerbyConnector,
+        physicalDatasourceMetadataBuilder
     );
     final ServiceEmitter noopEmitter = new NoopServiceEmitter();
     final TaskLockConfig taskLockConfig = new TaskLockConfig()

@@ -42,6 +42,7 @@ import org.apache.druid.guice.IndexingServiceModuleHelper;
 import org.apache.druid.guice.IndexingServiceTaskLogsModule;
 import org.apache.druid.guice.IndexingServiceTuningConfigModule;
 import org.apache.druid.guice.Jerseys;
+import org.apache.druid.guice.JoinableFactoryModule;
 import org.apache.druid.guice.JsonConfigProvider;
 import org.apache.druid.guice.LazySingleton;
 import org.apache.druid.guice.LifecycleModule;
@@ -73,6 +74,7 @@ import org.apache.druid.metadata.input.InputSourceModule;
 import org.apache.druid.query.DruidMetrics;
 import org.apache.druid.query.lookup.LookupSerdeModule;
 import org.apache.druid.segment.incremental.RowIngestionMetersFactory;
+import org.apache.druid.segment.join.Joinable;
 import org.apache.druid.segment.realtime.appenderator.AppenderatorsManager;
 import org.apache.druid.segment.realtime.appenderator.DummyForInjectionAppenderatorsManager;
 import org.apache.druid.segment.realtime.firehose.ChatHandlerProvider;
@@ -125,6 +127,7 @@ public class CliMiddleManager extends ServerRunnable
   {
     return ImmutableList.of(
         new MiddleManagerServiceModule(),
+        new JoinableFactoryModule(),
         new Module()
         {
           @Override

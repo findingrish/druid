@@ -20,6 +20,7 @@
 package org.apache.druid.client.coordinator;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.query.SegmentDescriptor;
 import org.apache.druid.rpc.ServiceRetryPolicy;
 import org.apache.druid.timeline.DataSegment;
@@ -43,6 +44,8 @@ public interface CoordinatorClient
    * Fetches segment metadata for the given dataSource and intervals.
    */
   ListenableFuture<List<DataSegment>> fetchUsedSegments(String dataSource, List<Interval> intervals);
+
+  ListenableFuture<List<PhysicalDatasourceMetadata>> fetchDatasourceMetadata(List<String> datasources);
 
   /**
    * Returns a new instance backed by a ServiceClient which follows the provided retryPolicy

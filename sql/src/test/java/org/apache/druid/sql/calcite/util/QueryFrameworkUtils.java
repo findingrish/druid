@@ -22,14 +22,18 @@ package org.apache.druid.sql.calcite.util;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Injector;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.druid.client.BrokerInternalQueryConfig;
+import org.apache.druid.client.coordinator.NoopCoordinatorClient;
 import org.apache.druid.guice.ExpressionModule;
 import org.apache.druid.java.util.emitter.core.NoopEmitter;
 import org.apache.druid.java.util.emitter.service.ServiceEmitter;
 import org.apache.druid.math.expr.ExprMacroTable;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.query.DefaultGenericQueryMetricsFactory;
 import org.apache.druid.query.DefaultQueryConfig;
 import org.apache.druid.query.GlobalTableDataSource;
@@ -77,8 +81,10 @@ import org.easymock.EasyMock;
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -225,7 +231,15 @@ public class QueryFrameworkUtils
         SegmentMetadataCacheConfig.create(),
         CalciteTests.TEST_AUTHENTICATOR_ESCALATOR,
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        new NoopCoordinatorClient()
+        {
+          @Override
+          public ListenableFuture<List<PhysicalDatasourceMetadata>> fetchDatasourceMetadata(List<String> datasources)
+          {
+            return Futures.immediateFuture(Collections.emptyList());
+          }
+        }
     );
 
     try {

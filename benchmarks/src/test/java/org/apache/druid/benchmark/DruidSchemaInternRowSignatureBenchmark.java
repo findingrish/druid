@@ -22,11 +22,15 @@ package org.apache.druid.benchmark;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.druid.client.BrokerInternalQueryConfig;
 import org.apache.druid.client.TimelineServerView;
+import org.apache.druid.client.coordinator.NoopCoordinatorClient;
 import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.java.util.common.guava.Sequence;
 import org.apache.druid.java.util.common.guava.Sequences;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.query.metadata.metadata.ColumnAnalysis;
 import org.apache.druid.query.metadata.metadata.SegmentAnalysis;
 import org.apache.druid.segment.column.ColumnType;
@@ -59,7 +63,10 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -91,7 +98,15 @@ public class DruidSchemaInternRowSignatureBenchmark
           SegmentMetadataCacheConfig.create(),
           escalator,
           brokerInternalQueryConfig,
-          new NoopServiceEmitter()
+          new NoopServiceEmitter(),
+          new NoopCoordinatorClient()
+          {
+            @Override
+            public ListenableFuture<List<PhysicalDatasourceMetadata>> fetchDatasourceMetadata(List<String> datasources)
+            {
+              return Futures.immediateFuture(Collections.emptyList());
+            }
+          }
       );
     }
 

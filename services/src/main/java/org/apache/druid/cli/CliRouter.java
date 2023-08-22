@@ -29,6 +29,7 @@ import com.google.inject.name.Names;
 import org.apache.druid.curator.discovery.DiscoveryModule;
 import org.apache.druid.discovery.NodeRole;
 import org.apache.druid.guice.Jerseys;
+import org.apache.druid.guice.JoinableFactoryModule;
 import org.apache.druid.guice.JsonConfigProvider;
 import org.apache.druid.guice.LazySingleton;
 import org.apache.druid.guice.LifecycleModule;
@@ -91,6 +92,7 @@ public class CliRouter extends ServerRunnable
         new RouterProcessingModule(),
         new QueryableModule(),
         new QueryRunnerFactoryModule(),
+        new JoinableFactoryModule(),
         new JettyHttpClientModule("druid.router.http", Router.class),
         JettyHttpClientModule.global(),
         binder -> {

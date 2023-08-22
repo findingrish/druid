@@ -40,7 +40,7 @@ public class TestDerbyConnector extends DerbyConnector
       Supplier<MetadataStorageTablesConfig> dbTables
   )
   {
-    this(config, dbTables, "jdbc:derby:memory:druidTest" + dbSafeUUID());
+    this(config, dbTables, "jdbc:derby://localhost:1527/var/druid/metadata.db;create=true");
   }
 
   protected TestDerbyConnector(
@@ -118,7 +118,7 @@ public class TestDerbyConnector extends DerbyConnector
     @Override
     protected void after()
     {
-      connector.tearDown();
+      //connector.tearDown();
     }
 
     public TestDerbyConnector getConnector()

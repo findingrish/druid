@@ -123,6 +123,7 @@ public class CliIndexer extends ServerRunnable
     return ImmutableList.of(
         new DruidProcessingModule(),
         new QueryableModule(),
+        new JoinableFactoryModule(),
         new QueryRunnerFactoryModule(),
         new SegmentWranglerModule(),
         new JoinableFactoryModule(),

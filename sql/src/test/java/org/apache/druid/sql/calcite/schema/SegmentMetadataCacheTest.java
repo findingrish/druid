@@ -26,12 +26,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.druid.client.BrokerInternalQueryConfig;
 import org.apache.druid.client.ImmutableDruidServer;
+import org.apache.druid.client.coordinator.CoordinatorClient;
+import org.apache.druid.client.coordinator.NoopCoordinatorClient;
 import org.apache.druid.data.input.InputRow;
 import org.apache.druid.data.input.InputRowSchema;
 import org.apache.druid.data.input.impl.DimensionsSpec;
@@ -40,6 +44,7 @@ import org.apache.druid.java.util.common.Intervals;
 import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.guava.Sequences;
 import org.apache.druid.java.util.metrics.StubServiceEmitter;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
 import org.apache.druid.query.DruidMetrics;
 import org.apache.druid.query.GlobalTableDataSource;
 import org.apache.druid.query.QueryContexts;
@@ -90,6 +95,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -109,6 +115,7 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
   private TestServerInventoryView serverView;
   private List<ImmutableDruidServer> druidServers;
   private SegmentMetadataCache runningSchema;
+  private CoordinatorClient coordinatorClient;
   private CountDownLatch buildTableLatch = new CountDownLatch(1);
   private CountDownLatch markDataSourceLatch = new CountDownLatch(1);
   private CountDownLatch refreshLatch = new CountDownLatch(1);
@@ -279,6 +286,7 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
     final List<DataSegment> realtimeSegments = ImmutableList.of(segment1);
     serverView = new TestServerInventoryView(walker.getSegments(), realtimeSegments);
     druidServers = serverView.getDruidServers();
+    coordinatorClient = new TestCoordinatorClient();
   }
 
   public SegmentMetadataCache buildSchemaMarkAndTableLatch() throws InterruptedException
@@ -300,13 +308,14 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         config,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     )
     {
       @Override
-      protected DatasourceTable.PhysicalDatasourceMetadata buildDruidTable(String dataSource)
+      protected PhysicalDatasourceMetadata buildDruidTable(String dataSource)
       {
-        DatasourceTable.PhysicalDatasourceMetadata table = super.buildDruidTable(dataSource);
+        PhysicalDatasourceMetadata table = super.buildDruidTable(dataSource);
         buildTableLatch.countDown();
         return table;
       }
@@ -338,7 +347,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
         )
     {
       @Override
@@ -392,7 +402,7 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
   public void testGetTableMapFoo() throws InterruptedException
   {
     SegmentMetadataCache schema = buildSchemaMarkAndTableLatch();
-    final DatasourceTable.PhysicalDatasourceMetadata fooDs = schema.getDatasource("foo");
+    final PhysicalDatasourceMetadata fooDs = schema.getDatasource("foo");
     final DruidTable fooTable = new DatasourceTable(fooDs);
     final RelDataType rowType = fooTable.getRowType(new JavaTypeFactoryImpl());
     final List<RelDataTypeField> fields = rowType.getFieldList();
@@ -422,7 +432,7 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
   public void testGetTableMapFoo2() throws InterruptedException
   {
     SegmentMetadataCache schema = buildSchemaMarkAndTableLatch();
-    final DatasourceTable.PhysicalDatasourceMetadata fooDs = schema.getDatasource("foo2");
+    final PhysicalDatasourceMetadata fooDs = schema.getDatasource("foo2");
     final DruidTable fooTable = new DatasourceTable(fooDs);
     final RelDataType rowType = fooTable.getRowType(new JavaTypeFactoryImpl());
     final List<RelDataTypeField> fields = rowType.getFieldList();
@@ -453,7 +463,7 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
           }
         }
     );
-    final DatasourceTable.PhysicalDatasourceMetadata fooDs = schema.getDatasource(CalciteTests.SOME_DATASOURCE);
+    final PhysicalDatasourceMetadata fooDs = schema.getDatasource(CalciteTests.SOME_DATASOURCE);
     final DruidTable table = new DatasourceTable(fooDs);
     final RelDataType rowType = table.getRowType(new JavaTypeFactoryImpl());
     final List<RelDataTypeField> fields = rowType.getFieldList();
@@ -496,7 +506,7 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
     // using 'least restrictive' column type merge strategy, the types are expected to be the types defined as the
     // least restrictive blend across all segments
     SegmentMetadataCache schema = buildSchemaMarkAndTableLatch();
-    final DatasourceTable.PhysicalDatasourceMetadata fooDs = schema.getDatasource(CalciteTests.SOME_DATASOURCE);
+    final PhysicalDatasourceMetadata fooDs = schema.getDatasource(CalciteTests.SOME_DATASOURCE);
     final DruidTable table = new DatasourceTable(fooDs);
     final RelDataType rowType = table.getRowType(new JavaTypeFactoryImpl());
     final List<RelDataTypeField> fields = rowType.getFieldList();
@@ -709,7 +719,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     )
     {
       @Override
@@ -752,7 +763,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     )
     {
       @Override
@@ -799,7 +811,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     )
     {
       @Override
@@ -843,7 +856,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     )
     {
       @Override
@@ -884,7 +898,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     )
     {
       @Override
@@ -942,7 +957,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     )
     {
       @Override
@@ -1003,7 +1019,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     )
     {
       @Override
@@ -1038,7 +1055,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     )
     {
       @Override
@@ -1086,7 +1104,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     )
     {
       @Override
@@ -1146,7 +1165,7 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
   {
     SegmentMetadataCache schema3 = buildSchemaMarkAndRefreshLatch();
     Assert.assertTrue(refreshLatch.await(WAIT_TIMEOUT_SECS, TimeUnit.SECONDS));
-    DatasourceTable.PhysicalDatasourceMetadata fooTable = schema3.getDatasource("foo");
+    PhysicalDatasourceMetadata fooTable = schema3.getDatasource("foo");
     Assert.assertNotNull(fooTable);
     Assert.assertTrue(fooTable.dataSource() instanceof TableDataSource);
     Assert.assertFalse(fooTable.dataSource() instanceof GlobalTableDataSource);
@@ -1212,7 +1231,7 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
   {
     SegmentMetadataCache schema = buildSchemaMarkAndRefreshLatch();
     Assert.assertTrue(refreshLatch.await(WAIT_TIMEOUT_SECS, TimeUnit.SECONDS));
-    DatasourceTable.PhysicalDatasourceMetadata fooTable = schema.getDatasource("foo");
+    PhysicalDatasourceMetadata fooTable = schema.getDatasource("foo");
     Assert.assertNotNull(fooTable);
     Assert.assertTrue(fooTable.dataSource() instanceof TableDataSource);
     Assert.assertFalse(fooTable.dataSource() instanceof GlobalTableDataSource);
@@ -1328,7 +1347,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         brokerInternalQueryConfig,
-        new NoopServiceEmitter()
+        new NoopServiceEmitter(),
+        coordinatorClient
     );
 
     EasyMock.expect(factoryMock.factorize()).andReturn(lifecycleMock).once();
@@ -1464,7 +1484,8 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         SEGMENT_CACHE_CONFIG_DEFAULT,
         new NoopEscalator(),
         new BrokerInternalQueryConfig(),
-        emitter
+        emitter,
+        coordinatorClient
     )
     {
       @Override
@@ -1511,5 +1532,17 @@ public class SegmentMetadataCacheTest extends SegmentMetadataCacheCommon
         100L,
         PruneSpecsHolder.DEFAULT
     );
+  }
+
+  private static class TestCoordinatorClient extends NoopCoordinatorClient
+  {
+
+    @Override
+    public ListenableFuture<List<PhysicalDatasourceMetadata>> fetchDatasourceMetadata(
+        List<String> dataSource
+    )
+    {
+      return Futures.immediateFuture(Collections.emptyList());
+    }
   }
 }

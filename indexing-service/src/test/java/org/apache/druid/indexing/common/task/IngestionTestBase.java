@@ -64,6 +64,8 @@ import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.emitter.EmittingLogger;
 import org.apache.druid.metadata.EntryExistsException;
 import org.apache.druid.metadata.IndexerSQLMetadataStorageCoordinator;
+import org.apache.druid.metadata.PhysicalDatasourceMetadata;
+import org.apache.druid.metadata.PhysicalDatasourceMetadataBuilder;
 import org.apache.druid.metadata.SQLMetadataConnector;
 import org.apache.druid.metadata.SegmentsMetadataManager;
 import org.apache.druid.metadata.SegmentsMetadataManagerConfig;
@@ -87,6 +89,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.IOException;
@@ -130,11 +134,20 @@ public abstract class IngestionTestBase extends InitializedNullHandlingTest
         derbyConnectorRule.metadataTablesConfigSupplier().get(),
         derbyConnectorRule.getConnector()
     );
+
+    PhysicalDatasourceMetadataBuilder physicalDatasourceMetadataBuilder = Mockito.mock(PhysicalDatasourceMetadataBuilder.class);
+    Mockito.doReturn(Mockito.mock(PhysicalDatasourceMetadata.class))
+           .when(physicalDatasourceMetadataBuilder.buildDruidTable(
+               ArgumentMatchers.anyString(),
+               ArgumentMatchers.anySet()
+           ));
+
     segmentsMetadataManager = new SqlSegmentsMetadataManager(
         objectMapper,
         SegmentsMetadataManagerConfig::new,
         derbyConnectorRule.metadataTablesConfigSupplier(),
-        derbyConnectorRule.getConnector()
+        derbyConnectorRule.getConnector(),
+        physicalDatasourceMetadataBuilder
     );
     lockbox = new TaskLockbox(taskStorage, storageCoordinator);
     segmentCacheManagerFactory = new SegmentCacheManagerFactory(getObjectMapper());

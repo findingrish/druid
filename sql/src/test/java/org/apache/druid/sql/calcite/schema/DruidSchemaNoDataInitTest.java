@@ -61,7 +61,8 @@ public class DruidSchemaNoDataInitTest extends CalciteTestBase
           SEGMENT_CACHE_CONFIG_DEFAULT,
           new NoopEscalator(),
           new BrokerInternalQueryConfig(),
-          new NoopServiceEmitter()
+          new NoopServiceEmitter(),
+          null
       );
 
       cache.start();
