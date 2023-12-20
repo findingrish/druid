@@ -223,7 +223,7 @@ public class DiscoveryModule implements Module
             .addBinding(CURATOR_KEY)
             .toProvider(
                 new DruidLeaderSelectorProvider(
-                    zkPathsConfig -> ZKPaths.makePath(zkPathsConfig.getOverlordPath(), "_OVERLORD")
+                    zkPathsConfig -> ZKPaths.makePath(zkPathsConfig.getOverlordPath(), "_COORDINATOR")
                 )
             )
             .in(LazySingleton.class);

@@ -72,7 +72,7 @@ sub process_config
           } elsif ($name eq ':kill-timeout') {
             $kill_timeout = int($command);
           } else {
-            die "Duplicate command: $line\n" if grep { $_->{name} eq $name } @commands;
+            #die "Duplicate command: $line\n" if grep { $_->{name} eq $name } @commands;
             push @commands, {
               name => $name,
               command => $command,

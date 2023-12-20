@@ -321,6 +321,39 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
     	  </dependency>
+        <dependency>
+            <groupId>org.apache.ratis</groupId>
+            <artifactId>ratis-proto</artifactId>
+        </dependency>
+        <dependency>
+            <artifactId>ratis-client</artifactId>
+            <groupId>org.apache.ratis</groupId>
+        </dependency>
+        <dependency>
+            <artifactId>ratis-server</artifactId>
+            <groupId>org.apache.ratis</groupId>
+        </dependency>
+        <dependency>
+            <artifactId>ratis-netty</artifactId>
+            <groupId>org.apache.ratis</groupId>
+        </dependency>
+        <dependency>
+            <artifactId>ratis-grpc</artifactId>
+            <groupId>org.apache.ratis</groupId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ratis</groupId>
+            <artifactId>ratis-tools</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ratis</groupId>
+            <artifactId>ratis-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ratis</groupId>
+            <artifactId>ratis-metrics-default</artifactId>
+        </dependency>
+
 
         <!-- Tests -->
         <dependency>

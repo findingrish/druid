@@ -38,6 +38,7 @@ import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.emitter.EmittingLogger;
 import org.apache.druid.metadata.TaskLookup.CompleteTaskLookup;
 import org.apache.druid.metadata.TaskLookup.TaskLookupType;
+import org.apache.druid.metadata.storage.derby.RaftUpdateStatement;
 import org.joda.time.DateTime;
 import org.skife.jdbi.v2.Batch;
 import org.skife.jdbi.v2.FoldController;
@@ -208,16 +209,31 @@ public abstract class SQLMetadataStorageActionHandler<EntryType, StatusType, Log
           + "VALUES (:id, :created_date, :datasource, :payload, :type, :group_id, :active, :status_payload)",
           getEntryTable()
       );
-      handle.createStatement(sql)
-            .bind("id", entryId)
-            .bind("created_date", timestamp.toString())
-            .bind("datasource", dataSource)
-            .bind("payload", jsonMapper.writeValueAsBytes(entry))
-            .bind("type", type)
-            .bind("group_id", groupId)
-            .bind("active", active)
-            .bind("status_payload", jsonMapper.writeValueAsBytes(status))
-            .execute();
+
+      log.info("Executing insertTask. sql [%s]", sql);
+      if (connector.getRaftClient() == null) {
+        handle.createStatement(sql)
+              .bind("id", entryId)
+              .bind("created_date", timestamp.toString())
+              .bind("datasource", dataSource)
+              .bind("payload", jsonMapper.writeValueAsBytes(entry))
+              .bind("type", type)
+              .bind("group_id", groupId)
+              .bind("active", active)
+              .bind("status_payload", jsonMapper.writeValueAsBytes(status))
+              .execute();
+      } else {
+        RaftUpdateStatement raftUpdateStatement = new RaftUpdateStatement(sql);
+        raftUpdateStatement.bind("id", entryId)
+                           .bind("created_date", timestamp.toString())
+                           .bind("datasource", dataSource)
+                           .bind("payload", jsonMapper.writeValueAsBytes(entry))
+                           .bind("type", type)
+                           .bind("group_id", groupId)
+                           .bind("active", active)
+                           .bind("status_payload", jsonMapper.writeValueAsBytes(status));
+        connector.getRaftClient().send(raftUpdateStatement);
+      }
       return null;
     }
     catch (Throwable t) {
@@ -251,16 +267,32 @@ public abstract class SQLMetadataStorageActionHandler<EntryType, StatusType, Log
           @Override
           public Boolean withHandle(Handle handle) throws Exception
           {
-            return handle.createStatement(
-                StringUtils.format(
-                    "UPDATE %s SET active = :active, status_payload = :status_payload WHERE id = :id AND active = TRUE",
-                    entryTable
-                )
-            )
-                         .bind("id", entryId)
-                         .bind("active", active)
-                         .bind("status_payload", jsonMapper.writeValueAsBytes(status))
-                         .execute() == 1;
+            log.info("Executing setStatus sql: [UPDATE s SET active = :active, status_payload = :status_payload WHERE id = :id AND active = TRUE]");
+            if (connector.getRaftClient() == null) {
+              return handle.createStatement(
+                        StringUtils.format(
+                            "UPDATE %s SET active = :active, status_payload = :status_payload WHERE id = :id AND active = TRUE",
+                            entryTable
+                        )
+                    )
+                    .bind("id", entryId)
+                    .bind("active", active)
+                    .bind("status_payload", jsonMapper.writeValueAsBytes(status))
+                    .execute() == 1;
+            } else {
+              RaftUpdateStatement updateStatement = new RaftUpdateStatement(StringUtils.format(
+                  "UPDATE %s SET active = :active, status_payload = :status_payload WHERE id = :id AND active = TRUE",
+                  entryTable
+              ));
+
+              updateStatement.bind("id", entryId)
+                             .bind("active", active)
+                             .bind("status_payload", jsonMapper.writeValueAsBytes(status));
+
+              connector.getRaftClient().send(updateStatement);
+            }
+
+            return true;
           }
         }
     );
@@ -809,10 +841,22 @@ public abstract class SQLMetadataStorageActionHandler<EntryType, StatusType, Log
         "INSERT INTO %1$s (%2$s_id, lock_payload) VALUES (:entryId, :payload)",
         lockTable, entryTypeName
     );
-    return handle.createStatement(statement)
-                 .bind("entryId", entryId)
-                 .bind("payload", jsonMapper.writeValueAsBytes(lock))
-                 .execute() == 1;
+
+    log.info("Executing addLock. sql [%s]", statement);
+
+    if (connector.getRaftClient() == null) {
+      return handle.createStatement(statement)
+            .bind("entryId", entryId)
+            .bind("payload", jsonMapper.writeValueAsBytes(lock))
+            .execute() == 1;
+    } else {
+      RaftUpdateStatement raftUpdateStatement = new RaftUpdateStatement(statement);
+      raftUpdateStatement
+          .bind("entryId", entryId)
+          .bind("payload", jsonMapper.writeValueAsBytes(lock));
+      connector.getRaftClient().send(raftUpdateStatement);
+    }
+    return true;
   }
 
   @Override

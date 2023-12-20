@@ -30,6 +30,7 @@ import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.metadata.MetadataStorage;
 import org.apache.druid.metadata.MetadataStorageConnectorConfig;
 import org.apache.druid.metadata.MetadataStorageTablesConfig;
+import org.apache.druid.metadata.NoopMetadataStorageProvider;
 import org.apache.druid.metadata.SQLMetadataConnector;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
@@ -51,19 +52,22 @@ public class DerbyConnector extends SQLMetadataConnector
 
   @Inject
   public DerbyConnector(
+      RaftConfig raftConfig,
+      RaftClient raftClient,
       MetadataStorage storage,
       Supplier<MetadataStorageConnectorConfig> config,
       Supplier<MetadataStorageTablesConfig> dbTables
   )
   {
-    super(config, dbTables);
+    super(raftConfig.isEnable() ? raftClient : null, config, dbTables);
 
     final BasicDataSource datasource = getDatasource();
     datasource.setDriverClassLoader(getClass().getClassLoader());
     datasource.setDriverClassName("org.apache.derby.jdbc.ClientDriver");
 
-    this.dbi = new DBI(datasource);
-    this.storage = storage;
+    this.dbi = new DBI("jdbc:derby:memory:druid;create=true");
+    dbi.setSQLLog(new BeforeExecutor());
+    this.storage = new NoopMetadataStorageProvider().get();
     log.info("Derby connector instantiated with metadata storage [%s].", this.storage.getClass().getName());
   }
 

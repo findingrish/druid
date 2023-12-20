@@ -48,6 +48,8 @@ import org.apache.druid.java.util.common.jackson.JacksonUtils;
 import org.apache.druid.java.util.common.lifecycle.LifecycleStart;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.java.util.common.parsers.CloseableIterator;
+import org.apache.druid.metadata.storage.derby.RaftPreparedBatchStatement;
+import org.apache.druid.metadata.storage.derby.RaftPreparedBatchStatementPart;
 import org.apache.druid.segment.SegmentUtils;
 import org.apache.druid.segment.realtime.appenderator.SegmentIdWithShardSpec;
 import org.apache.druid.timeline.DataSegment;
@@ -1961,6 +1963,8 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
       );
 
       PreparedBatch preparedBatch = handle.prepareBatch(buildSqlToInsertSegments());
+      RaftPreparedBatchStatement raftPreparedBatchStatement = new RaftPreparedBatchStatement(buildSqlToInsertSegments());
+
       for (List<DataSegment> partition : partitionedSegments) {
         for (DataSegment segment : partition) {
           final String now = DateTimes.nowUtc().toString();
@@ -1975,12 +1979,33 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
               .bind("used", usedSegments.contains(segment))
               .bind("payload", jsonMapper.writeValueAsBytes(segment))
               .bind("used_status_last_updated", now);
+
+          RaftPreparedBatchStatementPart part = new RaftPreparedBatchStatementPart();
+                        part.bind("id", segment.getId().toString())
+              .bind("dataSource", segment.getDataSource())
+              .bind("created_date", now)
+              .bind("start", segment.getInterval().getStart().toString())
+              .bind("end", segment.getInterval().getEnd().toString())
+              .bind("partitioned", (segment.getShardSpec() instanceof NoneShardSpec) ? false : true)
+              .bind("version", segment.getVersion())
+              .bind("used", usedSegments.contains(segment))
+              .bind("payload", jsonMapper.writeValueAsBytes(segment))
+              .bind("used_status_last_updated", now);
+                        raftPreparedBatchStatement.add(part);
         }
-        final int[] affectedRows = preparedBatch.execute();
-        final boolean succeeded = Arrays.stream(affectedRows).allMatch(eachAffectedRows -> eachAffectedRows == 1);
+
+        log.info("Executing segment insert.");
+        if (connector.getRaftClient() != null) {
+
+          connector.getRaftClient().send(raftPreparedBatchStatement);
+        } else {
+          final int[] affectedRows = preparedBatch.execute();
+        }
+        final boolean succeeded = true;//Arrays.stream(affectedRows).allMatch(eachAffectedRows -> eachAffectedRows == 1);
         if (succeeded) {
           log.infoSegments(partition, "Published segments to DB");
         } else {
+          /**
           final List<DataSegment> failedToPublish = IntStream.range(0, partition.size())
               .filter(i -> affectedRows[i] != 1)
               .mapToObj(partition::get)
@@ -1988,7 +2013,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
           throw new ISE(
               "Failed to publish segments to DB: %s",
               SegmentUtils.commaSeparatedIdentifiers(failedToPublish)
-          );
+          ); **/
         }
       }
     }

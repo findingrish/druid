@@ -75,6 +75,9 @@ import org.apache.druid.metadata.MetadataStorageProvider;
 import org.apache.druid.metadata.SegmentsMetadataManager;
 import org.apache.druid.metadata.SegmentsMetadataManagerConfig;
 import org.apache.druid.metadata.SegmentsMetadataManagerProvider;
+import org.apache.druid.metadata.storage.derby.CoordinatorRaftServer;
+import org.apache.druid.metadata.storage.derby.RaftConfig;
+import org.apache.druid.metadata.storage.derby.SqlStateMachine;
 import org.apache.druid.query.DefaultGenericQueryMetricsFactory;
 import org.apache.druid.query.DefaultQueryConfig;
 import org.apache.druid.query.GenericQueryMetricsFactory;
@@ -225,6 +228,12 @@ public class CliCoordinator extends ServerRunnable
                 CachingCostBalancerStrategyConfig.class
             );
             JsonConfigProvider.bind(binder, "druid.coordinator.segmentMetadataCache", SegmentMetadataCacheConfig.class);
+            JsonConfigProvider.bind(binder, "raft.props", RaftConfig.class);
+
+            if (Boolean.parseBoolean(properties.getProperty("raft.props.enable"))) {
+              binder.bind(SqlStateMachine.class).in(LazySingleton.class);
+              LifecycleModule.register(binder, CoordinatorRaftServer.class);
+            }
 
             binder.bind(RedirectFilter.class).in(LazySingleton.class);
             if (beOverlord) {

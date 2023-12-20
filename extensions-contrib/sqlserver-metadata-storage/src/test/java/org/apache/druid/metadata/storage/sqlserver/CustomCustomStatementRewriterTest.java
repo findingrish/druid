@@ -29,7 +29,7 @@ import org.skife.jdbi.v2.exceptions.UnableToCreateStatementException;
 import org.skife.jdbi.v2.tweak.RewrittenStatement;
 
 @SuppressWarnings("nls")
-public class CustomStatementRewriterTest
+public class CustomCustomStatementRewriterTest
 {
 
   private CustomStatementRewriter customStatementRewriter;

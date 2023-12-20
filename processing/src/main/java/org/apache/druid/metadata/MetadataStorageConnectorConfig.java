@@ -98,7 +98,8 @@ public class MetadataStorageConnectorConfig
   public String getConnectURI()
   {
     if (connectURI == null) {
-      return StringUtils.format("jdbc:derby://%s:%s/druid;create=true", host, port);
+      return StringUtils.format("jdbc:derby:memory:druid;create=true");
+      // jdbc:derby:memory:testdb;create=true
     }
     return connectURI;
   }

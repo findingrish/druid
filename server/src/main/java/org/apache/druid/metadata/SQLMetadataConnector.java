@@ -19,6 +19,7 @@
 
 package org.apache.druid.metadata;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
@@ -28,15 +29,19 @@ import com.google.common.collect.ImmutableSet;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.dbcp2.BasicDataSourceFactory;
 import org.apache.druid.java.util.common.ISE;
+import org.apache.druid.java.util.common.Pair;
 import org.apache.druid.java.util.common.RetryUtils;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.java.util.common.logger.Logger;
+import org.apache.druid.metadata.storage.derby.RaftClient;
 import org.skife.jdbi.v2.Batch;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.PreparedBatch;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.skife.jdbi.v2.TransactionStatus;
+import org.skife.jdbi.v2.Update;
 import org.skife.jdbi.v2.exceptions.DBIException;
 import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
 import org.skife.jdbi.v2.exceptions.UnableToObtainConnectionException;
@@ -53,8 +58,10 @@ import java.sql.SQLRecoverableException;
 import java.sql.SQLTransientException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -70,11 +77,25 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
   private final Supplier<MetadataStorageTablesConfig> tablesConfigSupplier;
   private final Predicate<Throwable> shouldRetry;
 
+  private  RaftClient raftClient = null;
+
   public SQLMetadataConnector(
       Supplier<MetadataStorageConnectorConfig> config,
       Supplier<MetadataStorageTablesConfig> tablesConfigSupplier
   )
   {
+    this.config = config;
+    this.tablesConfigSupplier = tablesConfigSupplier;
+    this.shouldRetry = this::isTransientException;
+  }
+
+  public SQLMetadataConnector(
+      RaftClient raftClient,
+      Supplier<MetadataStorageConnectorConfig> config,
+      Supplier<MetadataStorageTablesConfig> tablesConfigSupplier
+  )
+  {
+    this.raftClient = raftClient;
     this.config = config;
     this.tablesConfigSupplier = tablesConfigSupplier;
     this.shouldRetry = this::isTransientException;
@@ -788,12 +809,8 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
     BasicDataSource dataSource;
 
     try {
-      Properties dbcpProperties = connectorConfig.getDbcpProperties();
-      if (dbcpProperties != null) {
-        dataSource = BasicDataSourceFactory.createDataSource(dbcpProperties);
-      } else {
-        dataSource = new BasicDataSourceExt(connectorConfig);
-      }
+      //Properties dbcpProperties = connectorConfig.getDbcpProperties();
+        dataSource = BasicDataSourceFactory.createDataSource(new Properties());
     }
     catch (Exception e) {
       throw new RuntimeException(e);
@@ -904,6 +921,11 @@ public abstract class SQLMetadataConnector implements MetadataStorageConnector
     catch (Exception e) {
       log.warn(e, "Exception while deleting records from table");
     }
+  }
+
+  public RaftClient getRaftClient()
+  {
+    return raftClient;
   }
 
   /**
