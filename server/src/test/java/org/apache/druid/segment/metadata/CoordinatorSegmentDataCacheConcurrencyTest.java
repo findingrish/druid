@@ -20,8 +20,6 @@
 package org.apache.druid.segment.metadata;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import org.apache.druid.client.BrokerServerView;
@@ -41,8 +39,6 @@ import org.apache.druid.java.util.common.NonnullPair;
 import org.apache.druid.java.util.common.concurrent.Execs;
 import org.apache.druid.java.util.common.concurrent.ScheduledExecutors;
 import org.apache.druid.java.util.emitter.service.ServiceEmitter;
-import org.apache.druid.metadata.SegmentsMetadataManagerConfig;
-import org.apache.druid.metadata.SqlSegmentsMetadataManager;
 import org.apache.druid.metadata.TestDerbyConnector;
 import org.apache.druid.query.QueryRunner;
 import org.apache.druid.query.TableDataSource;
@@ -57,7 +53,6 @@ import org.apache.druid.segment.realtime.appenderator.SegmentSchemas;
 import org.apache.druid.segment.writeout.OffHeapMemorySegmentWriteOutMediumFactory;
 import org.apache.druid.server.coordination.DruidServerMetadata;
 import org.apache.druid.server.coordination.ServerType;
-import org.apache.druid.server.coordinator.SegmentReplicationStatusManager;
 import org.apache.druid.server.initialization.ServerConfig;
 import org.apache.druid.server.metrics.NoopServiceEmitter;
 import org.apache.druid.server.security.NoopEscalator;
@@ -66,19 +61,16 @@ import org.apache.druid.timeline.DataSegment.PruneSpecsHolder;
 import org.apache.druid.timeline.SegmentId;
 import org.apache.druid.timeline.partition.NumberedShardSpec;
 import org.easymock.EasyMock;
-import org.joda.time.Period;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -109,9 +101,6 @@ public class CoordinatorSegmentDataCacheConcurrencyTest extends SegmentMetadataC
   private TestSegmentMetadataQueryWalker walker;
   private SegmentSchemaCache segmentSchemaCache;
   private SegmentSchemaBackFillQueue backFillQueue;
-  private SqlSegmentsMetadataManager sqlSegmentsMetadataManager;
-  private SegmentReplicationStatusManager segmentReplicationStatusManager;
-  private Supplier<SegmentsMetadataManagerConfig> segmentsMetadataManagerConfigSupplier;
   private final ObjectMapper mapper = TestHelper.makeJsonMapper();
 
   @Before
@@ -201,13 +190,6 @@ public class CoordinatorSegmentDataCacheConcurrencyTest extends SegmentMetadataC
         }
     );
 
-    sqlSegmentsMetadataManager = Mockito.mock(SqlSegmentsMetadataManager.class);
-    Mockito.when(sqlSegmentsMetadataManager.getImmutableDataSourcesWithAllUsedSegments()).thenReturn(Collections.emptyList());
-    SegmentsMetadataManagerConfig metadataManagerConfig = Mockito.mock(SegmentsMetadataManagerConfig.class);
-    Mockito.when(metadataManagerConfig.getPollDuration()).thenReturn(Period.millis(1000));
-    segmentsMetadataManagerConfigSupplier = Suppliers.ofInstance(metadataManagerConfig);
-    segmentReplicationStatusManager = Mockito.mock(SegmentReplicationStatusManager.class);
-
     inventoryView.init();
     initLatch.await();
     exec = Execs.multiThreaded(4, "DruidSchemaConcurrencyTest-%d");
@@ -245,10 +227,7 @@ public class CoordinatorSegmentDataCacheConcurrencyTest extends SegmentMetadataC
         new InternalQueryConfig(),
         new NoopServiceEmitter(),
         segmentSchemaCache,
-        backFillQueue,
-        sqlSegmentsMetadataManager,
-        segmentReplicationStatusManager,
-        segmentsMetadataManagerConfigSupplier
+        backFillQueue
     )
     {
       @Override
@@ -362,10 +341,7 @@ public class CoordinatorSegmentDataCacheConcurrencyTest extends SegmentMetadataC
         new InternalQueryConfig(),
         new NoopServiceEmitter(),
         segmentSchemaCache,
-        backFillQueue,
-        sqlSegmentsMetadataManager,
-        segmentReplicationStatusManager,
-        segmentsMetadataManagerConfigSupplier
+        backFillQueue
     )
     {
       @Override

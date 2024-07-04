@@ -20,14 +20,10 @@
 package org.apache.druid.segment.metadata;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Supplier;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import org.apache.druid.client.CoordinatorServerView;
-import org.apache.druid.client.ImmutableDruidDataSource;
 import org.apache.druid.client.InternalQueryConfig;
 import org.apache.druid.client.ServerView;
 import org.apache.druid.client.TimelineServerView;
@@ -37,8 +33,6 @@ import org.apache.druid.java.util.common.lifecycle.LifecycleStart;
 import org.apache.druid.java.util.common.lifecycle.LifecycleStop;
 import org.apache.druid.java.util.emitter.EmittingLogger;
 import org.apache.druid.java.util.emitter.service.ServiceEmitter;
-import org.apache.druid.metadata.SegmentsMetadataManagerConfig;
-import org.apache.druid.metadata.SqlSegmentsMetadataManager;
 import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.metadata.metadata.SegmentAnalysis;
 import org.apache.druid.segment.SchemaPayloadPlus;
@@ -47,29 +41,21 @@ import org.apache.druid.segment.column.RowSignature;
 import org.apache.druid.segment.realtime.appenderator.SegmentSchemas;
 import org.apache.druid.server.QueryLifecycleFactory;
 import org.apache.druid.server.coordination.DruidServerMetadata;
-import org.apache.druid.server.coordinator.SegmentReplicationStatusManager;
 import org.apache.druid.server.security.Escalator;
 import org.apache.druid.timeline.DataSegment;
 import org.apache.druid.timeline.SegmentId;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -95,15 +81,7 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
   private final ColumnTypeMergePolicy columnTypeMergePolicy;
   private final SegmentSchemaCache segmentSchemaCache;
   private final SegmentSchemaBackFillQueue segmentSchemaBackfillQueue;
-  private final SqlSegmentsMetadataManager sqlSegmentsMetadataManager;
-  private final SegmentReplicationStatusManager segmentReplicationStatusManager;
-
-  // Schema for datasources from cold segments
-  private final ConcurrentHashMap<String, DataSourceInformation> coldSchemaTable = new ConcurrentHashMap<>();
-  private final long coldSchemaExecPeriodMillis;
-  private final ScheduledExecutorService coldScehmaExec;
   private @Nullable Future<?> cacheExecFuture = null;
-  private @Nullable Future<?> coldSchemaExecFuture = null;
 
   @Inject
   public CoordinatorSegmentMetadataCache(
@@ -114,10 +92,7 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
       InternalQueryConfig internalQueryConfig,
       ServiceEmitter emitter,
       SegmentSchemaCache segmentSchemaCache,
-      SegmentSchemaBackFillQueue segmentSchemaBackfillQueue,
-      SqlSegmentsMetadataManager sqlSegmentsMetadataManager,
-      SegmentReplicationStatusManager segmentReplicationStatusManager,
-      Supplier<SegmentsMetadataManagerConfig> segmentsMetadataManagerConfigSupplier
+      SegmentSchemaBackFillQueue segmentSchemaBackfillQueue
   )
   {
     super(queryLifecycleFactory, config, escalator, internalQueryConfig, emitter);
@@ -125,16 +100,6 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
     this.columnTypeMergePolicy = config.getMetadataColumnTypeMergePolicy();
     this.segmentSchemaCache = segmentSchemaCache;
     this.segmentSchemaBackfillQueue = segmentSchemaBackfillQueue;
-    this.sqlSegmentsMetadataManager = sqlSegmentsMetadataManager;
-    this.segmentReplicationStatusManager = segmentReplicationStatusManager;
-    this.coldSchemaExecPeriodMillis =
-        segmentsMetadataManagerConfigSupplier.get().getPollDuration().getMillis();
-    coldScehmaExec = Executors.newSingleThreadScheduledExecutor(
-        new ThreadFactoryBuilder()
-            .setNameFormat("DruidColdSchema-ScheduledExecutor-%d")
-            .setDaemon(true)
-            .build()
-    );
 
     initServerViewTimelineCallback(serverView);
   }
@@ -203,14 +168,10 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
   {
     callbackExec.shutdownNow();
     cacheExec.shutdownNow();
-    coldScehmaExec.shutdownNow();
     segmentSchemaCache.onLeaderStop();
     segmentSchemaBackfillQueue.onLeaderStop();
     if (cacheExecFuture != null) {
       cacheExecFuture.cancel(true);
-    }
-    if (coldSchemaExecFuture != null) {
-      coldSchemaExecFuture.cancel(true);
     }
   }
 
@@ -220,12 +181,6 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
     try {
       segmentSchemaBackfillQueue.onLeaderStart();
       cacheExecFuture = cacheExec.submit(this::cacheExecLoop);
-      coldSchemaExecFuture = coldScehmaExec.schedule(
-          this::coldDatasourceSchemaExec,
-          coldSchemaExecPeriodMillis,
-          TimeUnit.MILLISECONDS
-      );
-
       if (config.isAwaitInitializationOnStart()) {
         awaitInitialization();
       }
@@ -240,9 +195,6 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
     log.info("No longer leader, stopping cache.");
     if (cacheExecFuture != null) {
       cacheExecFuture.cancel(true);
-    }
-    if (coldSchemaExecFuture != null) {
-      coldSchemaExecFuture.cancel(true);
     }
     segmentSchemaCache.onLeaderStop();
     segmentSchemaBackfillQueue.onLeaderStop();
@@ -384,29 +336,6 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
     return availableSegmentMetadata;
   }
 
-  @Override
-  public DataSourceInformation getDatasource(String name)
-  {
-    DataSourceInformation dataSourceInformation = tables.get(name);
-    if (dataSourceInformation != null) {
-      // implies that the datasource is entirely cold
-      return dataSourceInformation;
-    }
-    return coldSchemaTable.get(name);
-  }
-
-  @Override
-  public Map<String, DataSourceInformation> getDataSourceInformationMap()
-  {
-    Map<String, DataSourceInformation> copy = new HashMap<>(tables);
-
-    for (Map.Entry<String, DataSourceInformation> entry : coldSchemaTable.entrySet()) {
-      // add entirely cold datasource schema
-      copy.computeIfAbsent(entry.getKey(), value -> entry.getValue());
-    }
-    return ImmutableMap.copyOf(copy);
-  }
-
   /**
    * Executes SegmentMetadataQuery to fetch schema information for each segment in the refresh list.
    * The schema information for individual segments is combined to construct a table schema, which is then cached.
@@ -453,25 +382,13 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
     // Rebuild the datasources.
     for (String dataSource : dataSourcesToRebuild) {
       final RowSignature rowSignature = buildDataSourceRowSignature(dataSource);
-
-      RowSignature mergedSignature = rowSignature;
-
-      DataSourceInformation coldDatasourceInformation = coldSchemaTable.get(dataSource);
-      if (coldDatasourceInformation != null) {
-        if (rowSignature == null) {
-          mergedSignature = coldDatasourceInformation.getRowSignature();
-        } else {
-          mergedSignature = mergeHotAndColdSchema(rowSignature, coldDatasourceInformation.getRowSignature());
-        }
-      }
-
-      if (mergedSignature == null) {
+      if (rowSignature == null) {
         log.info("RowSignature null for dataSource [%s], implying that it no longer exists. All metadata removed.", dataSource);
         tables.remove(dataSource);
         continue;
       }
 
-      DataSourceInformation druidTable = new DataSourceInformation(dataSource, mergedSignature);
+      DataSourceInformation druidTable = new DataSourceInformation(dataSource, rowSignature);
       final DataSourceInformation oldTable = tables.put(dataSource, druidTable);
 
       if (oldTable == null || !oldTable.getRowSignature().equals(druidTable.getRowSignature())) {
@@ -500,98 +417,6 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
 
     segmentIds.removeAll(cachedSegments);
     return cachedSegments;
-  }
-
-  @VisibleForTesting
-  protected void coldDatasourceSchemaExec()
-  {
-    Collection<ImmutableDruidDataSource> immutableDataSources =
-        sqlSegmentsMetadataManager.getImmutableDataSourcesWithAllUsedSegments();
-
-    final Map<String, ColumnType> columnTypes = new LinkedHashMap<>();
-
-    Set<String> dataSources = new HashSet<>();
-
-    for (ImmutableDruidDataSource dataSource : immutableDataSources) {
-      String dataSourceName = dataSource.getName();
-      dataSources.add(dataSourceName);
-      Collection<DataSegment> dataSegments = dataSource.getSegments();
-
-      for (DataSegment segment : dataSegments) {
-        Integer replicationFactor = segmentReplicationStatusManager.getReplicationFactor(segment.getId());
-        if (replicationFactor != null && replicationFactor != 0) {
-          continue;
-        }
-        Optional<SchemaPayloadPlus> optionalSchema = segmentSchemaCache.getSchemaForSegment(segment.getId());
-        if (optionalSchema.isPresent()) {
-          RowSignature rowSignature = optionalSchema.get().getSchemaPayload().getRowSignature();
-          for (String column : rowSignature.getColumnNames()) {
-            final ColumnType columnType =
-                rowSignature.getColumnType(column)
-                            .orElseThrow(() -> new ISE("Encountered null type for column [%s]", column));
-
-            columnTypes.compute(column, (c, existingType) -> columnTypeMergePolicy.merge(existingType, columnType));
-          }
-        }
-      }
-
-      final RowSignature.Builder builder = RowSignature.builder();
-      columnTypes.forEach(builder::add);
-
-      RowSignature coldSignature = builder.build();
-
-      log.debug("[%s] signature from cold segments is [%s]", dataSourceName, coldSignature);
-
-      coldSchemaTable.put(dataSourceName, new DataSourceInformation(dataSourceName, coldSignature));
-
-      // update tables map with merged schema, if signature doesn't exist we do not add entry in this table
-      // schema for entirely cold datasource is maintained separately
-      tables.computeIfPresent(
-          dataSourceName,
-          (ds, info) -> {
-            RowSignature mergedSignature = mergeHotAndColdSchema(info.getRowSignature(), coldSignature);
-
-            if (!info.getRowSignature().equals(mergedSignature)) {
-              log.info(
-                  "[%s] has new merged signature: %s. hot signature [%s], cold signature [%s].",
-                  ds, mergedSignature, info.getRowSignature(), coldSignature
-              );
-            } else {
-              log.debug("[%s] merged signature is unchanged.", ds);
-            }
-
-            return new DataSourceInformation(ds, mergedSignature);
-          }
-      );
-    }
-
-    // remove any stale datasource from the map
-    coldSchemaTable.keySet().retainAll(dataSources);
-  }
-
-  private RowSignature mergeHotAndColdSchema(RowSignature hot, RowSignature cold)
-  {
-    final Map<String, ColumnType> columnTypes = new LinkedHashMap<>();
-
-    List<RowSignature> signatures = new ArrayList<>();
-    // hot datasource schema takes precedence
-    signatures.add(hot);
-    signatures.add(cold);
-
-    for (RowSignature signature : signatures) {
-      for (String column : signature.getColumnNames()) {
-        final ColumnType columnType =
-            signature.getColumnType(column)
-                        .orElseThrow(() -> new ISE("Encountered null type for column [%s]", column));
-
-        columnTypes.compute(column, (c, existingType) -> columnTypeMergePolicy.merge(existingType, columnType));
-      }
-    }
-
-    final RowSignature.Builder builder = RowSignature.builder();
-    columnTypes.forEach(builder::add);
-
-    return builder.build();
   }
 
   @VisibleForTesting
