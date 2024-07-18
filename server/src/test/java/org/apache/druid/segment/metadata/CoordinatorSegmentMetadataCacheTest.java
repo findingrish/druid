@@ -1874,6 +1874,8 @@ public class CoordinatorSegmentMetadataCacheTest extends CoordinatorSegmentMetad
     Mockito.when(zeroSegmentReplicaCount.required()).thenReturn(0);
     Mockito.when(nonZeroSegmentReplicaCount.required()).thenReturn(1);
     SegmentReplicationStatus segmentReplicationStatus = Mockito.mock(SegmentReplicationStatus.class);
+
+
     Mockito.when(segmentReplicationStatus.getReplicaCountsInCluster(ArgumentMatchers.eq(coldSegment.getId())))
            .thenReturn(zeroSegmentReplicaCount);
     Mockito.when(segmentReplicationStatus.getReplicaCountsInCluster(ArgumentMatchers.eq(singleColdSegment.getId())))
