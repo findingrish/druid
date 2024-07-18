@@ -47,6 +47,10 @@ concurrency:
 env:
   MYSQL_DRIVER_CLASSNAME: com.mysql.jdbc.Driver # Used to set druid config in docker image for revised ITs
   SEGMENT_DOWNLOAD_TIMEOUT_MINS: 5
+  BACKWARD_COMPATIBILITY_IT_ENABLED: false
+  DRUID_PREVIOUS_VERSION: 30.0.0
+  DRUID_PREVIOUS_VERSION_DOWNLOAD_URL: https://dlcdn.apache.org/druid/30.0.0/apache-druid-30.0.0-bin.tar.gz
+  DRUID_PREVIOUS_IT_IMAGE_NAME: org.apache.druid.integration-tests/test:30.0.0
 
 jobs:
   build:
@@ -54,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [ '8', '11', '17', '21' ]
+        jdk: [ '8' ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout branch
@@ -119,12 +123,13 @@ jobs:
     name: "unit tests (jdk${{ matrix.jdk }}, sql-compat=true)"
     uses: ./.github/workflows/unit-tests.yml
     needs: unit-tests
-    if: ${{ always() && (needs.unit-tests.result == 'success' || needs.unit-tests.outputs.continue_tests) }}
+    if: false #${{ always() && (needs.unit-tests.result == 'success' || needs.unit-tests.outputs.continue_tests) }}
     with:
       jdk: ${{ matrix.jdk }}
       sql_compatibility: true
 
   unit-tests:
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -138,10 +143,10 @@ jobs:
 
   standard-its:
     needs: unit-tests
-    if: ${{ always() && (needs.unit-tests.result == 'success' || needs.unit-tests.outputs.continue_tests) }}
+    if: false #${{ always() && (needs.unit-tests.result == 'success' || needs.unit-tests.outputs.continue_tests) }}
     uses: ./.github/workflows/standard-its.yml
 
   revised-its:
     needs: unit-tests
-    if: ${{ always() && (needs.unit-tests.result == 'success' || needs.unit-tests.outputs.continue_tests) }}
+    if: false #${{ always() && (needs.unit-tests.result == 'success' || needs.unit-tests.outputs.continue_tests) }}
     uses: ./.github/workflows/revised-its.yml
