@@ -18,6 +18,22 @@
 name: "Revised ITs workflow"
 on:
   workflow_call:
+    backward_compatibility_it_enabled:
+      description: "Flag for backward compatibility IT"
+      required: true
+      type: string
+    druid_previous_version:
+      description: "Previous druid versions to run the test against."
+      required: true
+      type: string
+    druid_previous_version_download_url:
+      description: "URL to download the previous druid version."
+      required: true
+      type: string
+    druid_previous_it_image_name:
+      description: "Druid previous version image name."
+      required: true
+      type: string
   workflow_dispatch:
 
 jobs:
