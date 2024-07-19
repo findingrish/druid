@@ -94,6 +94,11 @@ jobs:
     name: ${{ inputs.it }} integration test (Compile=jdk${{ inputs.build_jdk }}, Run=jdk${{ inputs.runtime_jdk }}, Indexer=${{ inputs.use_indexer }})
     runs-on: ubuntu-22.04
     steps:
+      - name: dummy step
+        run: |
+          echo "BACKWARD_COMPATIBILITY_IT_ENABLED is ${BACKWARD_COMPATIBILITY_IT_ENABLED} or ${{ env.BACKWARD_COMPATIBILITY_IT_ENABLED}}"
+          echo "previous version is ${DRUID_PREVIOUS_VERSION} or ${{env.DRUID_PREVIOUS_VERSION}}
+
       - name: Checkout branch
         uses: actions/checkout@v4
 
@@ -125,7 +130,17 @@ jobs:
           path: |
             ./druid-container-jdk${{ inputs.build_jdk }}.tar.gz
             ./integration-tests-ex/image/target/env.sh
+            
             # todo retrieve old version image here as well 
+
+      - name: Retrieve old cached docker image
+        id: docker-restore
+        uses: actions/cache/restore@v4
+        with:
+          key: druid-container-jdk8-version30.0.0.tar.gz-${{ github.sha }}
+          path: |
+            ./druid-container-jdk8-version30.0.0.tar.gz
+            echo "BACKWARD_COMPATIBILITY_IT_ENABLED is ${BACKWARD_COMPATIBILITY_IT_ENABLED} or ${{ env.BACKWARD_COMPATIBILITY_IT_ENABLED}}"
 
       - name: Maven build
         if: steps.maven-restore.outputs.cache-hit != 'true' || ( steps.docker-restore.outputs.cache-hit != 'true' && steps.targets-restore.outputs.cache-hit != 'true' )
