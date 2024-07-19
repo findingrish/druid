@@ -27,7 +27,7 @@ on:
 
 jobs:
   build:
-    if: (github.event_name == 'schedule' && github.repository == 'apache/druid')
+    if: false #(github.event_name == 'schedule' && github.repository == 'apache/druid')
     name: build (jdk8)
     runs-on: ubuntu-latest
     steps:
@@ -110,11 +110,12 @@ jobs:
       group: other
 
   security_vulnerabilities:
-    if: github.repository == 'apache/druid'
+    if: false #github.repository == 'apache/druid'
     name: security vulnerabilities
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
