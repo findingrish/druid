@@ -38,6 +38,14 @@ on:
   workflow_dispatch:
 
 jobs:
+  print_envs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: print-env-vars
+        run: |
+          echo ${{ inputs.BACKWARD_COMPATIBILITY_IT_ENABLED }}
+          echo ${{ inputs.DRUID_PREVIOUS_VERSION }}
+
   changes:
     runs-on: ubuntu-latest
     # Required permissions
