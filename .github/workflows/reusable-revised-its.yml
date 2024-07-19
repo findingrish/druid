@@ -163,7 +163,7 @@ jobs:
           docker images
 
       - name: Load previous version docker image
-        if: ${BACKWARD_COMPATIBILITY_IT_ENABLED == 'true'}
+        if: ${{ env.BACKWARD_COMPATIBILITY_IT_ENABLED == 'true' }}
         run: |
           docker load --input druid-container-jdk8-version${DRUID_PREVIOUS_VERSION}.tar.gz
 
