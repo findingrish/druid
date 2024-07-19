@@ -102,6 +102,8 @@ jobs:
           echo ${{env.DRUID_PREVIOUS_VERSION}}
           echo ${{ inputs.BACKWARD_COMPATIBILITY_IT_ENABLED }}
           echo ${{ inputs.DRUID_PEVIOUS_VERSION }}
+          echo {AWS_REGION}
+          echo ${{ inputs.AWS_REGION }}
 
       - name: Checkout branch
         uses: actions/checkout@v4
