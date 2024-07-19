@@ -131,6 +131,7 @@ jobs:
         if: steps.maven-restore.outputs.cache-hit != 'true' || ( steps.docker-restore.outputs.cache-hit != 'true' && steps.targets-restore.outputs.cache-hit != 'true' )
         run: |
           ./it.sh ci
+          echo "BACKWARD_COMPATIBILITY_IT_ENABLED is ${BACKWARD_COMPATIBILITY_IT_ENABLED} or ${{ env.BACKWARD_COMPATIBILITY_IT_ENABLED}}"
 
       - name: Create docker image
         if: steps.docker-restore.outputs.cache-hit != 'true' || steps.maven-restore.outputs.cache-hit != 'true'
@@ -148,9 +149,9 @@ jobs:
         env:
           docker-restore: ${{ toJson(steps.docker-restore.outputs) }}
         run: |
-          docker tag ${DRUID_PREVIOUS_IT_IMAGE_NAME} ${DRUID_PREVIOUS_IT_IMAGE_NAME}-jdk${{ inputs.build_jdk }}-version${DRUID_PREVIOUS_VERSION}
+          docker tag ${DRUID_PREVIOUS_IT_IMAGE_NAME} ${DRUID_PREVIOUS_IT_IMAGE_NAME}-jdk8-version${DRUID_PREVIOUS_VERSION}
           echo ${DRUID_PREVIOUS_IT_IMAGE_NAME}
-          docker save "${DRUID_PREVIOUS_IT_IMAGE_NAME}" | gzip > druid-container-jdk${{ inputs.build_jdk }}-version${DRUID_PREVIOUS_VERSION}.tar.gz
+          docker save "${DRUID_PREVIOUS_IT_IMAGE_NAME}" | gzip > druid-container-jdk8-version${DRUID_PREVIOUS_VERSION}.tar.gz
 
       - name: Stop and remove docker containers
         run: |
