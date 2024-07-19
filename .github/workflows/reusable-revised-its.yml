@@ -125,6 +125,7 @@ jobs:
           path: |
             ./druid-container-jdk${{ inputs.build_jdk }}.tar.gz
             ./integration-tests-ex/image/target/env.sh
+            # todo retrieve old version image here as well 
 
       - name: Maven build
         if: steps.maven-restore.outputs.cache-hit != 'true' || ( steps.docker-restore.outputs.cache-hit != 'true' && steps.targets-restore.outputs.cache-hit != 'true' )
@@ -143,10 +144,11 @@ jobs:
           docker save "$DRUID_IT_IMAGE_NAME" | gzip > druid-container-jdk${{ inputs.build_jdk }}.tar.gz
 
       - name: Save old version docker image
-        if: ${{ env.BACKWARD_COMPATIBILITY_IT_ENABLED == 'true' }} && (steps.docker-restore.outputs.cache-hit != 'true' || steps.maven-restore.outputs.cache-hit != 'true')
+        if: ${{ env.BACKWARD_COMPATIBILITY_IT_ENABLED == 'true' && (steps.docker-restore.outputs.cache-hit != 'true' || steps.maven-restore.outputs.cache-hit != 'true') }}
         env:
           docker-restore: ${{ toJson(steps.docker-restore.outputs) }}
         run: |
+          echo $
           docker tag ${DRUID_PREVIOUS_IT_IMAGE_NAME} ${DRUID_PREVIOUS_IT_IMAGE_NAME}-jdk${{ inputs.build_jdk }}-version${DRUID_PREVIOUS_VERSION}
           echo ${DRUID_PREVIOUS_IT_IMAGE_NAME}
           docker save "${DRUID_PREVIOUS_IT_IMAGE_NAME}" | gzip > druid-container-jdk${{ inputs.build_jdk }}-version${DRUID_PREVIOUS_VERSION}.tar.gz
