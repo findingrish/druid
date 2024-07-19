@@ -134,7 +134,7 @@ jobs:
             # todo retrieve old version image here as well 
 
       - name: Retrieve old cached docker image
-        id: docker-restore
+        id: docker-restore-old
         uses: actions/cache/restore@v4
         with:
           key: druid-container-jdk8-version30.0.0.tar.gz-${{ github.sha }}
