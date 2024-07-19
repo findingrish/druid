@@ -143,13 +143,13 @@ jobs:
           docker save "$DRUID_IT_IMAGE_NAME" | gzip > druid-container-jdk${{ inputs.build_jdk }}.tar.gz
 
       - name: Save old version docker image
-        if: ${{ inputs.BACKWARD_COMPATIBILITY_IT_ENABLED == 'true' }} && (steps.docker-restore.outputs.cache-hit != 'true' || steps.maven-restore.outputs.cache-hit != 'true')
+        if: ${BACKWARD_COMPATIBILITY_IT_ENABLED == 'true' } && (steps.docker-restore.outputs.cache-hit != 'true' || steps.maven-restore.outputs.cache-hit != 'true')
         env:
           docker-restore: ${{ toJson(steps.docker-restore.outputs) }}
         run: |
-          docker tag $DRUID_PREVIOUS_IT_IMAGE_NAME $DRUID_PREVIOUS_IT_IMAGE_NAME-jdk${{ inputs.build_jdk }}-version${{ inputs.DRUID_PREVIOUS_VERSION }}
-          echo $DRUID_PREVIOUS_IT_IMAGE_NAME
-          docker save "$DRUID_PREVIOUS_IT_IMAGE_NAME" | gzip > druid-container-jdk${{ inputs.build_jdk }}-version${{ inputs.DRUID_PREVIOUS_VERSION }}.tar.gz
+          docker tag ${DRUID_PREVIOUS_IT_IMAGE_NAME} ${DRUID_PREVIOUS_IT_IMAGE_NAME}-jdk${{ inputs.build_jdk }}-version${DRUID_PREVIOUS_VERSION}
+          echo ${DRUID_PREVIOUS_IT_IMAGE_NAME}
+          docker save "${DRUID_PREVIOUS_IT_IMAGE_NAME}" | gzip > druid-container-jdk${{ inputs.build_jdk }}-version${DRUID_PREVIOUS_VERSION}.tar.gz
 
       - name: Stop and remove docker containers
         run: |
@@ -163,9 +163,9 @@ jobs:
           docker images
 
       - name: Load previous version docker image
-        if: ${{ inputs.BACKWARD_COMPATIBILITY_IT_ENABLED == 'true' }}
+        if: ${BACKWARD_COMPATIBILITY_IT_ENABLED == 'true'}
         run: |
-          docker load --input druid-container-jdk8-version${{ inputs.DRUID_PREVIOUS_VERSION }}.tar.gz
+          docker load --input druid-container-jdk8-version${DRUID_PREVIOUS_VERSION}.tar.gz
 
       - name: Run IT
         id: run-it
