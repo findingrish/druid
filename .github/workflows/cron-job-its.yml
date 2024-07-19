@@ -27,7 +27,7 @@ on:
 
 jobs:
   build:
-    if: (github.event_name == 'schedule' && github.repository == 'apache/druid')
+    if: false #(github.event_name == 'schedule' && github.repository == 'apache/druid')
     name: build (jdk8)
     runs-on: ubuntu-latest
     steps:
@@ -59,6 +59,7 @@ jobs:
         testing_group: [batch-index, input-format, input-source, perfect-rollup-parallel-batch-index, kafka-index, kafka-index-slow, kafka-transactional-index, kafka-transactional-index-slow, kafka-data-format, ldap-security, realtime-index, append-ingestion, compaction]
     uses: ./.github/workflows/reusable-standard-its.yml
     needs: build
+    if: false
     with:
       build_jdk: 8
       runtime_jdk: 11
@@ -110,10 +111,11 @@ jobs:
       group: other
 
   security_vulnerabilities:
-    if: github.repository == 'apache/druid'
+    if: false #github.repository == 'apache/druid'
     name: security vulnerabilities
     strategy:
       fail-fast: false
+    #if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout branch

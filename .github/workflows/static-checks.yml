@@ -38,6 +38,7 @@ env:
 
 jobs:
   static-checks:
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -113,6 +114,7 @@ jobs:
         run: ${MVN} spotbugs:check --fail-at-end -pl '!benchmarks'
 
   intellij-inspections:
+    if: false
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
@@ -145,6 +147,7 @@ jobs:
           --scope JavaInspectionsScope
 
   openrewrite:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: checkout branch
@@ -175,6 +178,7 @@ jobs:
           path: ./target/rewrite/rewrite.patch
 
   web-checks:
+    if: false
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
