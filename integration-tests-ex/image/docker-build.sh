@@ -63,6 +63,8 @@ fi
 # Download the previous druid tar
 curl -L $DRUID_PREVIOUS_VERSION_DOWNLOAD_URL --output apache-druid-$DRUID_PREV_VERSION-bin.tar.gz
 
+echo "Downloaded previous version tar"
+
 docker build -t $DRUID_PREVIOUS_IT_IMAGE_NAME \
 	--build-arg DRUID_VERSION=$DRUID_PREV_VERSION \
 	--build-arg MYSQL_VERSION=$MYSQL_VERSION \
