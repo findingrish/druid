@@ -155,12 +155,23 @@ jobs:
     if: false #${{ always() && (needs.unit-tests.result == 'success' || needs.unit-tests.outputs.continue_tests) }}
     uses: ./.github/workflows/standard-its.yml
 
-  revised-its:
+  expose-vars:
     needs: build
-    if: ${{  always() }} #${{ always() && (needs.unit-tests.result == 'success' || needs.unit-tests.outputs.continue_tests) }}
-    uses: ./.github/workflows/revised-its.yml
-    with:
+    runs-on: ubuntu-latest
+    outputs:
       BACKWARD_COMPATIBILITY_IT_ENABLED: ${{ env.BACKWARD_COMPATIBILITY_IT_ENABLED }}
       DRUID_PREVIOUS_VERSION: ${{ env.DRUID_PREVIOUS_VERSION }}
       DRUID_PREVIOUS_VERSION_DOWNLOAD_URL: ${{ env.DRUID_PREVIOUS_VERSION_DOWNLOAD_URL }}
       DRUID_PREVIOUS_IT_IMAGE_NAME: ${{ env.DRUID_PREVIOUS_IT_IMAGE_NAME }}
+    steps:
+      - run: echo "Exposing env vars"
+
+  revised-its:
+    needs: expose-vars
+    if: ${{  always() }} #${{ always() && (needs.unit-tests.result == 'success' || needs.unit-tests.outputs.continue_tests) }}
+    uses: ./.github/workflows/revised-its.yml
+    with:
+      BACKWARD_COMPATIBILITY_IT_ENABLED: ${{ needs.expose-vars.outputs.BACKWARD_COMPATIBILITY_IT_ENABLED }}
+      DRUID_PREVIOUS_VERSION: ${{ needs.expose-vars.outputs.DRUID_PREVIOUS_VERSION }}
+      DRUID_PREVIOUS_VERSION_DOWNLOAD_URL: ${{ needs.expose-vars.outputs.DRUID_PREVIOUS_VERSION_DOWNLOAD_URL }}
+      DRUID_PREVIOUS_IT_IMAGE_NAME: ${{ needs.expose-vars.outputs.DRUID_PREVIOUS_IT_IMAGE_NAME }}
