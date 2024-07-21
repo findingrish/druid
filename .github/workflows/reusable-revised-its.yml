@@ -59,19 +59,20 @@ on:
         type: string
       BACKWARD_COMPATIBILITY_IT_ENABLED:
         description: "Flag for backward compatibility IT"
-        required: true
+        required: false
         type: string
+        default: false
       DRUID_PREVIOUS_VERSION:
         description: "Previous druid versions to run the test against."
-        required: true
+        required: false
         type: string
       DRUID_PREVIOUS_VERSION_DOWNLOAD_URL:
         description: "URL to download the previous druid version."
-        required: true
+        required: false
         type: string
       DRUID_PREVIOUS_IT_IMAGE_NAME:
         description: "Druid previous version image name."
-        required: true
+        required: false
         type: string
 
 env:
