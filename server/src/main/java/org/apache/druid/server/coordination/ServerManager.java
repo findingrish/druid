@@ -293,7 +293,7 @@ public class ServerManager implements QuerySegmentWalker
     StorageAdapter storageAdapter = segment.asStorageAdapter();
     // Short-circuit when the index comes from a tombstone (it has no data by definition),
     // check for null also since no all segments (higher level ones) will have QueryableIndex...
-     if (storageAdapter.isFromTombstone() && queryType.equals(Query.SEGMENT_METADATA)) {
+     if (storageAdapter.isFromTombstone() && !queryType.equals(Query.SEGMENT_METADATA)) {
       return new NoopQueryRunner<>();
     }
 
