@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import org.apache.druid.collections.bitmap.BitmapFactory;
 import org.apache.druid.common.config.NullHandling;
 import org.apache.druid.data.input.impl.TimestampSpec;
 import org.apache.druid.error.DruidException;
@@ -57,26 +58,38 @@ import org.apache.druid.query.metadata.metadata.ListColumnIncluderator;
 import org.apache.druid.query.metadata.metadata.SegmentAnalysis;
 import org.apache.druid.query.metadata.metadata.SegmentMetadataQuery;
 import org.apache.druid.query.spec.LegacySegmentSpec;
+import org.apache.druid.segment.DimensionHandler;
 import org.apache.druid.segment.IncrementalIndexSegment;
+import org.apache.druid.segment.Metadata;
 import org.apache.druid.segment.QueryableIndex;
 import org.apache.druid.segment.QueryableIndexSegment;
+import org.apache.druid.segment.QueryableIndexStorageAdapter;
 import org.apache.druid.segment.TestHelper;
 import org.apache.druid.segment.TestIndex;
+import org.apache.druid.segment.column.ColumnHolder;
 import org.apache.druid.segment.column.ColumnType;
 import org.apache.druid.segment.column.RowSignature;
 import org.apache.druid.segment.column.ValueType;
+import org.apache.druid.segment.data.Indexed;
 import org.apache.druid.segment.incremental.IncrementalIndex;
 import org.apache.druid.segment.join.JoinType;
+import org.apache.druid.segment.loading.TombstoneSegmentizerFactory;
 import org.apache.druid.testing.InitializedNullHandlingTest;
+import org.apache.druid.timeline.DataSegment;
 import org.apache.druid.timeline.LogicalSegment;
 import org.apache.druid.timeline.SegmentId;
+import org.apache.druid.timeline.partition.LinearShardSpec;
+import org.apache.druid.timeline.partition.TombstoneShardSpec;
 import org.hamcrest.MatcherAssert;
+import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -119,6 +132,7 @@ public class SegmentMetadataQueryTest extends InitializedNullHandlingTest
         null
     );
   }
+
 
   @SuppressWarnings("unchecked")
   public static QueryRunner makeIncrementalIndexQueryRunner(
@@ -322,6 +336,68 @@ public class SegmentMetadataQueryTest extends InitializedNullHandlingTest
         null,
         null
     );
+  }
+
+  @Test
+  public void  testSegmentMetadataQueryTombstone()
+  {
+    final DataSegment dataSegment1 = DataSegment.builder()
+                                               .dataSource("foo1")
+                                               .interval(Intervals.of("2011-01-12T00:00:00.000Z/2011-05-01T00:00:00.000Z"))
+                                               .version("0")
+                                               .shardSpec(new TombstoneShardSpec())
+                                               .size(0)
+                                               .build();
+
+    QueryRunner runner1 = QueryRunnerTestHelper.makeQueryRunner(
+        FACTORY,
+        dataSegment1.getId(),
+        TombstoneSegmentizerFactory.segmentForTombstone(dataSegment1),
+        null
+    );
+
+    final DataSegment dataSegment2 = DataSegment.builder()
+                                                .dataSource("foo2")
+                                                .interval(Intervals.of("2011-01-12T00:00:00.000Z/2011-05-01T00:00:00.000Z"))
+                                                .version("0")
+                                                .shardSpec(new TombstoneShardSpec())
+                                                .size(0)
+                                                .build();
+    QueryRunner runner2 = QueryRunnerTestHelper.makeQueryRunner(
+        FACTORY,
+        dataSegment2.getId(),
+        TombstoneSegmentizerFactory.segmentForTombstone(dataSegment2),
+        null
+    );
+
+    QueryToolChest toolChest = FACTORY.getToolchest();
+
+    ExecutorService exec = Executors.newCachedThreadPool();
+    QueryRunner myRunner = new FinalizeResultsQueryRunner<>(
+        toolChest.mergeResults(
+            FACTORY.mergeRunners(
+                Execs.directExecutor(),
+                Lists.newArrayList(
+                    toolChest.preMergeQueryDecoration(runner1),
+                    toolChest.preMergeQueryDecoration(runner2)
+                )
+            )
+        ),
+        toolChest
+    );
+
+    SegmentMetadataQuery query = Druids
+        .newSegmentMetadataQueryBuilder()
+        .dataSource(DATASOURCE)
+        .intervals("2013/2014")
+        .toInclude(new ListColumnIncluderator(Arrays.asList("placement", "placementish")))
+        .analysisTypes(SegmentMetadataQuery.AnalysisType.ROLLUP)
+        .merge(true)
+        .build();
+
+    List<SegmentAnalysis> list = myRunner.run(QueryPlus.wrap(query)).toList();
+
+    exec.shutdownNow();
   }
 
   @Test
