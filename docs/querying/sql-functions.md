@@ -70,11 +70,26 @@ Returns the following:
 
 ## ACOS
 
-`ACOS(<NUMERIC>)`
+Calculates the arc cosine (arccosine) of a numeric expression.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `ACOS(expr)`
+* **Function type:** Scalar, numeric
 
-Calculates the arc cosine of a numeric expression.
+<details><summary>Example</summary>
+
+The following example calculates the arc cosine  of `0`.
+
+```sql
+SELECT ACOS(0) AS "arc_cosine"
+```
+Returns the following:
+
+| `arc_cosine` |  
+| -- | 
+| `1.5707963267948966` |
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## ANY_VALUE
 
@@ -280,27 +295,72 @@ Joins all elements of `arr` by the delimiter specified by `str`.
 
 ## ASIN
 
-`ASIN(<NUMERIC>)`
+Calculates the arc sine (arcsine) of a numeric expression.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `ASIN(expr)`
+* **Function type:** Scalar, numeric
 
-Calculates the arc sine of a numeric expression.
+<details><summary>Example</summary>
+
+The following example calculates the arc sine of `1`.
+
+```sql
+SELECT ASIN(1) AS "arc_sine"
+```
+Returns the following:
+
+| `arc_sine` |  
+| -- | 
+| `1.5707963267948966` |
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## ATAN
 
-`ATAN(<NUMERIC>)`
+Calculates the arc tangent (arctangent) of a numeric expression.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `ATAN(expr)`
+* **Function type:** Scalar, numeric
 
-Calculates the arc tangent of a numeric expression.
+<details><summary>Example</summary>
+
+The following example calculates the arc tangent of `1`.
+
+```sql
+SELECT ATAN(1) AS "arc_tangent"
+```
+Returns the following:
+
+| `arc_tangent` |  
+| -- | 
+| `0.7853981633974483` |
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## ATAN2
 
-`ATAN2(<NUMERIC>, <NUMERIC>)`
+Calculates the arc tangent (arctangent) of a specified x and y coordinate.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `ATAN2(x, y)`
+* **Function type:** Scalar, numeric
 
-Calculates the arc tangent of the two arguments.
+<details><summary>Example</summary>
+
+The following example calculates the arc tangent of the coordinate `(1, -1)`
+
+```sql
+SELECT ATAN2(1,-1) AS "arc_tangent_2"
+```
+Returns the following:
+
+| `arc_tangent_2` |  
+| -- | 
+| `2.356194490192345` |
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## AVG
 
@@ -336,67 +396,188 @@ Performs a bitwise XOR operation on all input values.
 
 ## BITWISE_AND
 
-`BITWISE_AND(expr1, expr2)`
+Returns the bitwise AND between two expressions: `expr1 & expr2`. 
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `BITWISE_AND(expr1, expr2)`
+* **Function type:** Scalar, numeric
 
-Returns the bitwise AND between the two expressions, that is, `expr1 & expr2`.
+<details><summary>Example</summary>
+
+The following example performs the bitwise AND operation `12 & 10`.
+
+```sql
+SELECT BITWISE_AND(12, 10) AS "bitwise_and"
+```
+Returns the following:
+
+| `bitwise_and` | 
+| -- |
+| 8 | 
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## BITWISE_COMPLEMENT
 
-`BITWISE_COMPLEMENT(expr)`
+Returns the bitwise complement (bitwise not) for the expression: `~expr`.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `BITWISE_COMPLEMENT(expr)`
+* **Function type:** Scalar, numeric
 
-Returns the bitwise NOT for the expression, that is, `~expr`.
+<details><summary>Example</summary>
+
+The following example performs the bitwise complement operation `~12`.
+
+```sql
+SELECT BITWISE_COMPLEMENT(12) AS "bitwise_complement"
+```
+Returns the following:
+
+| `bitwise_complement` | 
+| -- |
+| -13 | 
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## BITWISE_CONVERT_DOUBLE_TO_LONG_BITS
 
-`BITWISE_CONVERT_DOUBLE_TO_LONG_BITS(expr)`
+Converts the bits of an IEEE 754 floating-point double value to long.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:**`BITWISE_CONVERT_DOUBLE_TO_LONG_BITS(expr)`
+* **Function type:** Scalar, numeric
 
-Converts the bits of an IEEE 754 floating-point double value to a long.
+<details><summary>Example</summary>
+
+The following example returns the IEEE 754 floating-point double representation of `255` as a long. 
+
+```sql
+SELECT BITWISE_CONVERT_DOUBLE_TO_LONG_BITS(255) AS "ieee_754_double_to_long"
+```
+Returns the following:
+
+| `ieee_754_double_to_long` | 
+| -- |
+| `4643176031446892544` | 
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
+
 
 ## BITWISE_CONVERT_LONG_BITS_TO_DOUBLE
 
-`BITWISE_CONVERT_LONG_BITS_TO_DOUBLE(expr)`
-
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
-
 Converts a long to the IEEE 754 floating-point double specified by the bits stored in the long.
+
+* **Syntax:**`BITWISE_CONVERT_LONG_BITS_TO_DOUBLE(expr)`
+* **Function type:** Scalar, numeric
+
+<details><summary>Example</summary>
+
+The following example returns the long representation of `4643176031446892544` as an IEEE 754 floating-point double.
+
+```sql
+SELECT BITWISE_CONVERT_LONG_BITS_TO_DOUBLE(4643176031446892544) AS "long_to_ieee_754_double"
+```
+Returns the following:
+
+| `long_to_ieee_754_double` | 
+| -- |
+| `255` | 
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## BITWISE_OR
 
-`BITWISE_OR(expr1, expr2)`
+Returns the bitwise OR between the two expressions: `expr1 | expr2`.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `BITWISE_OR(expr1, expr2)`
+* **Function type:** Scalar, numeric
 
-Returns the bitwise OR between the two expressions, that is, `expr1 | expr2`.
+<details><summary>Example</summary>
+
+The following example performs the bitwise OR operation `12 | 10`.
+
+```sql
+SELECT BITWISE_OR(12, 10) AS "bitwise_or"
+```
+Returns the following:
+
+| `bitwise_or` | 
+| -- |
+| `14` | 
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## BITWISE_SHIFT_LEFT
 
-`BITWISE_SHIFT_LEFT(expr1, expr2)`
+Returns the bitwise left shift by x positions of an expr: `expr << x`.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `BITWISE_SHIFT_LEFT(expr, x)`
+* **Function type:** Scalar, numeric
 
-Returns a bitwise left shift of expr1, that is, `expr1 << expr2`.
+<details><summary>Example</summary>
+
+The following example performs the bitwise SHIFT operation `2 << 3`.
+
+```sql
+SELECT BITWISE_SHIFT_LEFT(2, 3) AS "bitwise_shift_left"
+```
+Returns the following:
+
+| `bitwise_shift_left` | 
+| -- |
+| `16` | 
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## BITWISE_SHIFT_RIGHT
 
-`BITWISE_SHIFT_RIGHT(expr1, expr2)`
+Returns the bitwise right shift by x positions of an expr: `expr >> x`.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `BITWISE_SHIFT_RIGHT(expr, x)`
+* **Function type:** Scalar, numeric
 
-Returns a bitwise right shift of expr1, that is, `expr1 >> expr2`.
+<details><summary>Example</summary>
+
+The following example performs the bitwise SHIFT operation `16 >> 3`.
+
+```sql
+SELECT BITWISE_SHIFT_RIGHT(16, 3) AS "bitwise_shift_right"
+```
+Returns the following:
+
+| `bitwise_shift_right` | 
+| -- |
+| `2` | 
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## BITWISE_XOR
 
-`BITWISE_XOR(expr1, expr2)`
+Returns the bitwise exclusive OR between the two expressions: `expr1 ^ expr2`.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `BITWISE_XOR(expr1, expr2)`
+* **Function type:** Scalar, numeric
 
-Returns the bitwise exclusive OR between the two expressions, that is, `expr1 ^ expr2`.
+<details><summary>Example</summary>
+
+The following example performs the bitwise XOR operation `12 ^ 10`.
+
+```sql
+SELECT BITWISE_XOR(12, 10) AS "bitwise_xor"
+```
+Returns the following:
+
+| `bitwise_xor` | 
+| -- |
+| `6` | 
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## BLOOM_FILTER
 
@@ -416,11 +597,30 @@ Returns true if the expression is contained in a Base64-serialized Bloom filter.
 
 ## BTRIM
 
-`BTRIM(<CHARACTER>, [<CHARACTER>])`
+Trims characters from both the leading and trailing ends of an expression. Defaults `chars` to a space if none is provided.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `BTRIM(expr[, chars])`
+* **Function type:** Scalar, string
 
-Trims characters from both the leading and trailing ends of an expression.
+<details><summary>Example</summary>
+
+The following example trims the `_` characters from both ends of the string expression.
+
+```sql
+SELECT 
+  '___abc___' AS "original_string",
+  BTRIM('___abc___', '_') AS "trim_both_ends"
+```
+
+Returns the following:
+
+| `original_string` | `trim_both_ends` |
+| -- | -- | 
+| `___abc___` | `abc` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## CASE
 
@@ -474,19 +674,22 @@ Returns the following:
 
 ## CHAR_LENGTH
 
-`CHAR_LENGTH(expr)`
-
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
-
 Alias for [`LENGTH`](#length).
+
+* **Syntax:** `CHAR_LENGTH(expr)`
+* **Function type:** Scalar, string 
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## CHARACTER_LENGTH
 
-`CHARACTER_LENGTH(expr)`
-
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
-
 Alias for [`LENGTH`](#length).
+
+* **Syntax:** `CHARACTER_LENGTH(expr)`
+* **Function type:** Scalar, string 
+
+[Learn more](sql-scalar.md#string-functions)
+
 
 ## COALESCE
 
@@ -498,35 +701,110 @@ Returns the first non-null value.
 
 ## CONCAT
 
-`CONCAT(expr, expr...)`
-
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
-
 Concatenates a list of expressions.
+
+* **Syntax:** `CONCAT(expr[, expr,...])`
+* **Function type:** Scalar, string
+
+<details><summary>Example</summary>
+
+The following example concatenates the `OriginCityName` column from `flight-carriers`, the string ` to `, and the `DestCityName` column from `flight-carriers`. 
+
+```sql
+SELECT
+  "OriginCityName" AS "origin_city",
+  "DestCityName" AS "destination_city",
+  CONCAT("OriginCityName", ' to ', "DestCityName") AS "concatenate_flight_details"
+FROM "flight-carriers"
+LIMIT 1
+```
+
+Returns the following:
+
+| `origin_city` | `destination_city` | `concatenate_flight_details` |
+| -- | -- | -- |
+| `San Juan, PR` | `Washington, DC` | `San Juan, PR to Washington, DC` | 
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## CONTAINS_STRING
 
-`CONTAINS_STRING(<CHARACTER>, <CHARACTER>)`
+Returns `true` if `str` is a substring of `expr`, case-sensitive. Otherwise returns `false`.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `CONTAINS_STRING(expr, str)`
+* **Function type:** Scalar, string
 
-Finds whether a string is in a given expression, case-sensitive.
+<details><summary>Example</summary>
+
+The following example returns `true` if the `OriginCityName` column from the `flight-carriers` datasource contains the substring `San`. 
+
+```sql
+SELECT
+  "OriginCityName" AS "origin_city",
+  CONTAINS_STRING("OriginCityName", 'San') AS "contains_string"
+FROM "flight-carriers"
+LIMIT 2
+```
+
+Returns the following:
+
+| `origin_city` | `contains_string` | 
+| -- | -- |
+| `San Juan, PR` | `true` |
+| `Boston, MA` | `false` |
+
+</details>
+
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## COS
 
-`COS(<NUMERIC>)`
-
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
-
 Calculates the trigonometric cosine of an angle expressed in radians.
+
+* **Syntax:** `COS(expr)`
+* **Function type:** Scalar, numeric
+
+<details><summary>Example</summary>
+
+The following example calculates the cosine of angle `PI/3` radians.
+
+```sql
+SELECT COS(PI / 3) AS "cosine"
+```
+Returns the following:
+
+| `cosine` |  
+| -- | 
+| `0.5000000000000001` |
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## COT
 
-`COT(<NUMERIC>)`
-
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
-
 Calculates the trigonometric cotangent of an angle expressed in radians.
+
+* **Syntax:** `COT(expr)`
+* **Function type:** Scalar, numeric
+
+<details><summary>Example</summary>
+
+The following example calculates the cotangent of angle `PI/3` radians.
+
+```sql
+SELECT COT(PI / 3) AS "cotangent"
+```
+Returns the following:
+
+| `cotangent` |  
+| -- | 
+| `0.577350269189626` |
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## COUNT
 
@@ -548,27 +826,84 @@ Returns the cumulative distribution of the current row within the window calcula
 
 ## CURRENT_DATE
 
-`CURRENT_DATE`
+Returns the current date in UTC time, unless you specify a different timezone in the query context.
 
-**Function type:** [Scalar, date and time](sql-scalar.md#date-and-time-functions)
+* **Syntax:** `CURRENT_DATE`
+* **Function type:** Scalar, date and time
 
-Returns the current date in the connection's time zone.
+<details><summary>Example</summary>
+
+The following example returns the current date.
+
+```sql
+SELECT CURRENT_DATE AS "current_date"
+```
+
+Returns the following:
+
+| `current_date` | 
+| -- |
+| `2024-08-14T00:00:00.000Z `|
+
+</details>
+
+[Learn more](sql-scalar.md#date-and-time-functions)
 
 ## CURRENT_TIMESTAMP
 
-`CURRENT_TIMESTAMP`
+Returns the current timestamp in UTC time, unless you specify a different timezone in the query context.
 
-**Function type:** [Scalar, date and time](sql-scalar.md#date-and-time-functions)
 
-Returns the current timestamp in the connection's time zone.
+* **Syntax:** `CURRENT_TIMESTAMP`
+* **Function type:** Scalar, date and time
+
+<details><summary>Example</summary>
+
+The following example returns the current timestamp.
+
+```sql
+SELECT CURRENT_TIMESTAMP AS "current_timestamp"
+```
+
+Returns the following:
+
+| `current_timestamp` |
+| -- |
+| `2024-08-14T21:30:13.793Z` |
+
+</details>
+
+[Learn more](sql-scalar.md#date-and-time-functions)
 
 ## DATE_TRUNC
 
-`DATE_TRUNC(<CHARACTER>, <TIMESTAMP>)`
-
-**Function type:** [Scalar, date and time](sql-scalar.md#date-and-time-functions)
-
 Rounds down a timestamp by a given time unit.
+
+* **Syntax:** `DATE_TRUNC(unit, timestamp_expr)` 
+* **Function type:** Scalar, date and time
+
+<details><summary>Example</summary>
+
+The following example truncates a timestamp from the `__time` column from the `taxi-trips` datasource to the most recent `decade`.
+
+```sql
+SELECT 
+  "__time" AS "original_timestamp",
+  DATE_TRUNC('decade', "__time") AS "truncate_timestamp"
+FROM "taxi-trips"
+LIMIT 1
+```
+
+Returns the following:
+
+| `original_timestamp` | `truncate_time` |
+| -- | -- |
+| `2013-08-01T08:14:37.000Z` | `2010-01-01T00:00:00.000Z` |
+
+</details>
+
+[Learn more](sql-scalar.md#date-and-time-functions)
+
 
 ## DECODE_BASE64_COMPLEX
 
@@ -580,20 +915,53 @@ Decodes a Base64-encoded string into a complex data type, where `dataType` is th
 
 ## DECODE_BASE64_UTF8
 
-`DECODE_BASE64_UTF8(expr)`
-
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
-
-
 Decodes a Base64-encoded string into a UTF-8 encoded string.
+
+* **Syntax:** `DECODE_BASE64_UTF8(expr)`
+* **Function type:** Scalar, string
+
+<details><summary>Example</summary>
+
+The following example converts the base64 encoded string `SGVsbG8gV29ybGQhCg==` into an UTF-8 encoded string.
+
+```sql
+SELECT
+  'SGVsbG8gV29ybGQhCg==' AS "base64_encoding",
+  DECODE_BASE64_UTF8('SGVsbG8gV29ybGQhCg==') AS "convert_to_UTF8_encoding"
+```
+
+Returns the following:
+
+| `base64_encoding` | `convert_to_UTF8_encoding` |
+| -- | -- |
+| `SGVsbG8gV29ybGQhCg==` | `Hello World!` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## DEGREES
 
-`DEGREES(<NUMERIC>)`
-
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
-
 Converts an angle from radians to degrees.
+
+* **Syntax:** `DEGREES(expr)`
+* **Function type:** Scalar, numeric
+
+<details><summary>Example</summary>
+
+The following example converts an angle of `PI` radians to degrees
+
+```sql
+SELECT DEGREES(PI) AS "degrees"
+```
+Returns the following:
+
+| `degrees` |  
+| -- | 
+| `180` |
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## DENSE_RANK
 
@@ -605,11 +973,36 @@ Returns the rank for a row within a window without gaps. For example, if two row
 
 ## DIV
 
-`DIV(x, y)`
-
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
-
 Returns the result of integer division of `x` by `y`.
+
+* **Syntax:** `DIV(x, y)`
+* **Function type:** Scalar, numeric
+
+<!--
+<details><summary>Example</summary>
+
+  The following calculates integer divisions of `78` by `10`.
+
+  ```sql
+  SELECT DIV(78, 10) as "division"
+  ``` 
+
+  Returns the following:
+
+  | `division` |
+  | -- |
+  | `7` |
+
+</details>
+-->
+
+:::info
+
+  The `DIV` function is not implemented in Druid versions 30.0.0 or earlier. Consider using [`SAFE_DIVIDE`](./sql-functions.md/#safe_divide) instead. 
+
+:::
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## DS_CDF
 
@@ -866,35 +1259,107 @@ Returns a union of HLL sketches.
 
 ## HUMAN_READABLE_BINARY_BYTE_FORMAT
 
-`HUMAN_READABLE_BINARY_BYTE_FORMAT(value[, precision])`
+Converts an integer byte size into human-readable [IEC](https://en.wikipedia.org/wiki/Binary_prefix) format.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `HUMAN_READABLE_BINARY_BYTE_FORMAT(value[, precision])`
+* **Function type:** Scalar, numeric
 
-Converts an integer byte size into human-readable IEC format.
+<details><summary>Example</summary>
+
+  The following example converts `1000000` into IEC format.
+
+  ```sql
+    SELECT HUMAN_READABLE_BINARY_BYTE_FORMAT(1000000, 2) AS "iec_format"
+  ```
+  
+  Returns the following:
+
+  | `iec_format` |
+  | -- |
+  | `976.56 KiB` |
+ 
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## HUMAN_READABLE_DECIMAL_BYTE_FORMAT
 
-`HUMAN_READABLE_DECIMAL_BYTE_FORMAT(value[, precision])`
+Converts a byte size into human-readable [SI](https://en.wikipedia.org/wiki/Binary_prefix) format.
 
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
+* **Syntax:** `HUMAN_READABLE_DECIMAL_BYTE_FORMAT(value[, precision])`
+* **Function type:** Scalar, numeric
 
-Converts a byte size into human-readable SI format.
+<details><summary>Example</summary>
+
+The following example converts `1000000` into SI format.
+
+```sql
+SELECT HUMAN_READABLE_DECIMAL_BYTE_FORMAT(1000000, 2) AS "si_format"
+```
+
+Returns the following:
+
+|`si_format`|
+|--|
+|`1.00 MB`|
+
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## HUMAN_READABLE_DECIMAL_FORMAT
 
-`HUMAN_READABLE_DECIMAL_FORMAT(value[, precision])`
-
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
-
 Converts a byte size into human-readable SI format with single-character units.
+
+* **Syntax:** `HUMAN_READABLE_DECIMAL_FORMAT(value[, precision])`
+* **Function type:** Scalar, numeric
+
+<details><summary>Example</summary>
+
+  The following example converts `1000000` into single character SI format.
+
+```sql
+SELECT HUMAN_READABLE_DECIMAL_FORMAT(1000000, 2) AS "single_character_si_format"
+```
+
+Returns the following:
+
+|`single_character_si_format`|
+|--|
+|`1.00 M`|
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## ICONTAINS_STRING
 
-`ICONTAINS_STRING(<expr>, str)`
+Returns `true` if `str` is a substring of `expr`, case-insensitive. Otherwise returns `false`.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `ICONTAINS_STRING(expr, str)`
+* **Function type:** Scalar, string
 
-Finds whether a string is in a given expression, case-insensitive.
+<details><summary>Example</summary>
+
+The following example returns `true` if the `OriginCityName` column from the `flight-carriers` datasource contains the case-insensitive substring `san`.  
+
+```sql
+SELECT
+  "OriginCityName" AS "origin_city",
+  ICONTAINS_STRING("OriginCityName", 'san') AS "contains_case_insensitive_string"
+FROM "flight-carriers"
+LIMIT 2
+```
+
+Returns the following:
+
+| `origin_city` | `contains_case_insensitive_string` |
+| -- | -- |
+| `San Juan, PR` | `true` |
+| `Boston, MA` | `false` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## IPV4_MATCH
 
@@ -1026,19 +1491,59 @@ Returns the minimum value from the provided arguments.
 
 ## LEFT
 
-`LEFT(expr, [length])`
+Returns the `N` leftmost characters of an expression, where `N` is an integer value.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `LEFT(expr, N)`
+* **Function type:** Scalar, string 
 
-Returns the leftmost number of characters from an expression.
+<details><summary>Example</summary>
+
+The following example returns the `3` leftmost characters of the expression `ABCDEFG`.
+
+```sql
+SELECT
+  'ABCDEFG' AS "expression",
+  LEFT('ABCDEFG', 3) AS "leftmost_characters"
+```
+
+Returns the following:
+
+| `expression` | `leftmost_characters` |
+| -- | -- |
+| `ABCDEFG` | `ABC` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## LENGTH
 
-`LENGTH(expr)`
+Returns the length of the expression in UTF-16 code units.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `LENGTH(expr)`
+* **Function type:** Scalar, string
 
-Returns the length of the expression in UTF-16 encoding.
+<details><summary>Example</summary>
+
+The following example returns the character length of the `OriginCityName` column from the `flight-carriers` datasource.
+
+```sql
+SELECT 
+  "OriginCityName" AS "origin_city_name",
+  LENGTH("OriginCityName") AS "city_name_length"
+FROM "flight-carriers"
+LIMIT 1
+```
+
+Returns the following:
+
+| `origin_city_name` | `city_name_length` | 
+| -- | -- |
+| `San Juan, PR` | `12` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## LN
 
@@ -1058,11 +1563,13 @@ SELECT
 FROM "taxi-trips"
 LIMIT 1
 ```
+
 Returns the following:
 
 | `max_temperature` | `natural_log_max_temp` | 
 | -- | -- | 
 | `76` | `4.330733340286331` | 
+
 </details>
 
 [Learn more](sql-scalar.md#numeric-functions)
@@ -1096,35 +1603,131 @@ Returns the following:
 
 ## LOOKUP
 
-`LOOKUP(<CHARACTER>, <CHARACTER>[, <CHARACTER>])`
+Searches for `expr` in a registered [query-time lookup table](lookups.md) named `lookupName` and returns the mapped value. If `expr` is null or not contained in the lookup, returns `defaultValue` if supplied, otherwise returns null.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `LOOKUP(expr, lookupName[, defaultValue])`
+* **Function type:** Scalar, string
 
-Looks up the expression in a registered query-time lookup table.
+<details><summary>Example</summary>
+
+The following example uses a `map` type lookup table named `code_to_name`, which contains the following key-value pairs:
+
+```json
+{
+  "SJU": "Luis Munoz Marin International Airport",
+  "IAD": "Dulles International Airport"
+}
+```
+
+The example uses `code_to_name` to map the `Origin` column from the `flight-carriers` datasource to the corresponding full airport name. Returns `key not found` if no matching key exists in the lookup table.
+
+```sql
+SELECT 
+  "Origin" AS "origin_airport",
+  LOOKUP("Origin", 'code_to_name','key not found') AS "full_airport_name"
+FROM "flight-carriers"
+LIMIT 2
+```
+
+Returns the following:
+
+| `origin_airport` | `full_airport_name` | 
+| -- | -- |
+| `SJU` | `Luis Munoz Marin International Airport` |
+| `BOS` | `key not found` |
+
+</details> 
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## LOWER
 
-`LOWER(expr)`
-
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
-
 Returns the expression in lowercase.
+
+* **Syntax:** `LOWER(expr)`
+* **Function type:** Scalar, string
+
+<details><summary>Example</summary>
+
+The following example converts the `OriginCityName` column from the `flight-carriers` datasource to lowercase.
+
+```sql
+SELECT 
+  "OriginCityName" AS "origin_city",
+  LOWER("OriginCityName") AS "lowercase"
+FROM "flight-carriers"
+LIMIT 1
+```
+
+Returns the following:
+
+| `origin_city` | `lowercase` |
+| -- | -- |
+`San Juan, PR` | `san juan, pr` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
+
 
 ## LPAD
 
-`LPAD(<CHARACTER>, <INTEGER>, [<CHARACTER>])`
+Returns a string of size `length` from `expr`. When the length of `expr` is less than `length`, left pads `expr` with `chars`, which defaults to the space character. Truncates `expr` to `length` if `length` is shorter than the length of `expr`.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `LPAD(expr, length[, chars])`
+* **Function type:** Scalar, string
 
-Returns the leftmost number of characters from an expression, optionally padded with the given characters.
+<details><summary>Example</summary>
+
+The following example left pads the value of `OriginStateName` from the `flight-carriers` datasource to return a total of 11 characters.
+
+```sql
+SELECT 
+  "OriginStateName" AS "origin_state",
+  LPAD("OriginStateName", 11, '+') AS "add_left_padding"
+FROM "flight-carriers"
+LIMIT 3
+```
+
+Returns the following:
+
+| `origin_state` | `add_left_padding` |
+| -- | -- |
+| `Puerto Rico` | `Puerto Rico` |
+| `Massachusetts` | `Massachuset` |
+| `Florida` | `++++Florida` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
+
 
 ## LTRIM
 
-`LTRIM(<CHARACTER>, [<CHARACTER>])`
+Trims characters from the leading end of an expression. Defaults `chars` to a space if none is provided.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `LTRIM(expr[, chars])`
+* **Function type:** Scalar, string
 
-Trims characters from the leading end of an expression.
+<details><summary>Example</summary>
+
+The following example trims the `_` characters from the leading end of the string expression.
+
+```sql
+SELECT 
+  '___abc___' AS "original_string",
+  LTRIM('___abc___', '_') AS "trim_leading_end_of_expression"
+```
+
+Returns the following:
+
+| `original_string` | `trim_leading_end_of_expression` |
+| -- | -- | 
+| `___abc___` | `abc___` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## MAX
 
@@ -1327,11 +1930,31 @@ Parses `expr` into a `COMPLEX<json>` object. This operator deserializes JSON val
 
 ## PARSE_LONG
 
-`PARSE_LONG(<CHARACTER>, [<INTEGER>])`
+Converts a string into a long(BIGINT) with the given radix, or into DECIMAL(base 10) if a radix is not provided.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:**`PARSE_LONG(string[, radix])`
+* **Function type:** Scalar, string
 
-Converts a string into a BIGINT with the given base or into a DECIMAL data type if the base is not specified.
+<details><summary>Example</summary>
+
+The following example converts the string representation of the binary, radix 2, number `1100` into its long (BIGINT) equivalent.
+
+```sql
+SELECT 
+  '1100' AS "binary_as_string", 
+  PARSE_LONG('1110', 2) AS "bigint_value"
+```
+
+Returns the following:
+
+| `binary_as_string` | `bigint_value` |
+| -- | -- |
+| `1100` | `14` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
+
 
 ## PERCENT_RANK
 
@@ -1343,11 +1966,33 @@ Returns the relative rank of the row calculated as a percentage according to the
 
 ## POSITION
 
-`POSITION(<CHARACTER> IN <CHARACTER> [FROM <INTEGER>])`
+Returns the one-based index position of a substring within an expression, optionally starting from a given one-based index. If `substring` is not found, returns 0.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax**: `POSITION(substring IN expr [FROM startingIndex])`
+* **Function type:** Scalar, string
 
-Returns the one-based index position of a substring within an expression, optionally starting from a given one-based index.
+<details><summary>Example</summary>
+
+The following example returns the one-based index of the substring `PR` in the `OriginCityName` column from the `flight-carriers` datasource starting from index 5.
+
+```sql
+SELECT 
+  "OriginCityName" AS "origin_city",
+  POSITION('PR' IN "OriginCityName" FROM 5) AS "index"
+FROM "flight-carriers"
+LIMIT 2
+```
+
+Returns the following:
+
+| `origin_city` | `index` |
+| -- | -- |
+| `San Juan, PR` | `11` |
+| `Boston, MA` | `0` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## POWER
 
@@ -1374,11 +2019,26 @@ Returns the following:
 
 ## RADIANS
 
-`RADIANS(expr)`
-
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
-
 Converts an angle from degrees to radians.
+
+* **Syntax:** `RADIANS(expr)`
+* **Function type:** Scalar, numeric
+
+<details><summary>Example</summary>
+
+The following example converts an angle of `180` degrees to radians
+
+```sql
+SELECT RADIANS(180) AS "radians"
+```
+Returns the following:
+
+| `radians` |  
+| -- | 
+| `3.141592653589793` |
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## RANK
 
@@ -1390,60 +2050,198 @@ Returns the rank with gaps for a row within a window. For example, if two rows t
 
 ## REGEXP_EXTRACT
 
-`REGEXP_EXTRACT(<CHARACTER>, <CHARACTER>, [<INTEGER>])`
+Apply regular expression `pattern` to `expr` and extract the Nth capture group. If `N` is unspecified or zero, returns the first substring that matches the pattern. Returns `null` if there is no matching pattern.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `REGEXP_EXTRACT(expr, pattern[, N])`
+* **Function type:** Scalar, string 
 
-Applies a regular expression to the string expression and returns the _n_th match.
+<details><summary>Example</summary>
+
+The following example uses regular expressions to find city names inside the `OriginCityName` column from the `flight-carriers` datasource by matching what comes before the comma.
+
+```sql
+SELECT 
+  "OriginCityName" AS "origin_city",
+  REGEXP_EXTRACT("OriginCityName", '([^,]+)', 0) AS "pattern_match"
+FROM "flight-carriers"
+LIMIT 1
+```
+
+Returns the following:
+
+| `origin_city` | `pattern_match` |
+| -- | -- |
+| `San Juan, PR` | `San Juan`|
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## REGEXP_LIKE
 
-`REGEXP_LIKE(<CHARACTER>, <CHARACTER>)`
+Returns `true` if the regular expression `pattern` finds a match in `expr`. Returns `false` otherwise.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `REGEXP_LIKE(expr, pattern)`
+* **Function type:** Scalar, string
 
-Returns true or false signifying whether the regular expression finds a match in the string expression.
+<details><summary>Example</summary>
+
+The following example returns `true` when the `OriginCityName` column from `flight-carriers` has a city name containing a space.
+
+```sql
+SELECT 
+  "OriginCityName" AS "origin_city",
+  REGEXP_LIKE("OriginCityName", '[A-Za-z]+\s[A-Za-z]+') AS "pattern_found"
+FROM "flight-carriers"
+LIMIT 2
+```
+
+Returns the following:
+
+| `origin_city` | `pattern_found` |
+| -- | -- |
+| `San Juan, PR` | `true` |
+| `Boston, MA` | `false` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## REGEXP_REPLACE
 
-`REGEXP_REPLACE(<CHARACTER>, <CHARACTER>, <CHARACTER>)`
+Replaces all occurrences of a regular expression in a string expression with a replacement string. Refer to capture groups in the replacement string using `$group` syntax. For example: `$1` or `$2`.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `REGEXP_REPLACE(expr, pattern, replacement)`
+* **Function type:** Scalar, string
 
-Replaces all occurrences of a regular expression in a string expression with a replacement string. The replacement
-string may refer to capture groups using `$1`, `$2`, etc.
+<details><summary>Example</summary>
+
+The following example matches three consecutive words, where each word is its own capture group, and replaces the matched words with the word in the second capture group punctuated with exclamation marks.
+
+```sql
+SELECT 
+  'foo bar baz' AS "original_string",
+  REGEXP_REPLACE('foo bar baz', '([A-Za-z]+) ([A-Za-z]+) ([A-Za-z]+)' , '$2!') AS "modified_string"
+```
+
+Returns the following:
+
+| `original_string` | `modified_string` |
+| -- | -- |
+| `foo bar baz` | `bar!` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
+
 
 ## REPEAT
 
-`REPEAT(<CHARACTER>, [<INTEGER>])`
+Repeats the string expression `N` times, where `N` is an integer.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `REPEAT(expr, N)`
+* **Function type:** Scalar, string
 
-Repeats the string expression an integer number of times.
+<details><summary>Example</summary>
+
+The following example returns the string expression `abc` repeated `3` times.
+
+```sql
+SELECT 
+  'abc' AS "original_string",
+  REPEAT('abc', 3) AS "with_repetition"
+```
+
+Returns the following: 
+
+| `original_string` | `with_repetition` |
+| -- | -- |
+| `abc` | `abcabcabc` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## REPLACE
 
-`REPLACE(expr, pattern, replacement)`
+Replaces instances of a substring with a replacement string in the given expression.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `REPLACE(expr, substring, replacement)`
+* **Function type:** Scalar, string 
 
-Replaces a pattern with another string in the given expression.
+<details><summary>Example</summary>
+
+The following example replaces instances of the substring `abc` with `XYZ`.
+
+```sql
+SELECT 
+  'abc 123 abc 123' AS "original_string",
+   REPLACE('abc 123 abc 123', 'abc', 'XYZ') AS "modified_string"
+```
+
+Returns the following:
+
+| `original_string` | `modified_string` | 
+| -- | -- |
+| `abc 123 abc 123` | `XYZ 123 XYZ 123` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## REVERSE
 
-`REVERSE(expr)`
-
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
-
 Reverses the given expression.
+
+* **Syntax:** `REVERSE(expr)`
+* **Function type:** Scalar, string
+
+<details><summary>Example</summary>
+
+The following example reverses the string expression `abc`.
+
+```sql
+SELECT 
+  'abc' AS "original_string",
+  REVERSE('abc') AS "reversal"
+```
+
+Returns the following:
+
+| `original_string` | `reversal` |
+| -- | -- |
+| `abc` | `cba` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## RIGHT
 
-`RIGHT(expr, [length])`
+Returns the `N` rightmost characters of an expression, where `N` is an integer value.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `RIGHT(expr, N)`
+* **Function type:** Scalar, string 
 
-Returns the rightmost number of characters from an expression.
+<details><summary>Example</summary>
+
+The following example returns the `3` rightmost characters of the expression `ABCDEFG`.
+
+```sql
+SELECT
+  'ABCDEFG' AS "expression",
+  RIGHT('ABCDEFG', 3) AS "rightmost_characters"
+```
+
+Returns the following:
+
+| `expression` | `rightmost_characters` |
+| -- | -- |
+| `ABCDEFG` | `EFG` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## ROUND
 
@@ -1483,35 +2281,109 @@ Returns the number of the row within the window starting from 1.
 
 ## RPAD
 
-`RPAD(<CHARACTER>, <INTEGER>, [<CHARACTER>])`
+Returns a string of size `length` from `expr`. When the length of `expr` is less than `length`, right pads `expr` with `chars`, which defaults to the space character. Truncates `expr` to `length` if `length` is shorter than the length of `expr`.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `RPAD(expr, length[, chars])`
+* **Function type:** Scalar, string
 
-Returns the rightmost number of characters from an expression, optionally padded with the given characters.
+<details><summary>Example</summary>
+
+The following example right pads the value of `OriginStateName` from the `flight-carriers` datasource to return a total of 11 characters.
+
+```sql
+SELECT 
+  "OriginStateName" AS "origin_state",
+  RPAD("OriginStateName", 11, '+') AS "add_right_padding"
+FROM "flight-carriers"
+LIMIT 3
+```
+
+Returns the following:
+
+| `origin_state` | `add_right_padding` |
+| -- | -- |
+| `Puerto Rico` | `Puerto Rico` |
+| `Massachusetts` | `Massachuset` |
+| `Florida` | `Florida++++` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## RTRIM
 
-`RTRIM(<CHARACTER>, [<CHARACTER>])`
+Trims characters from the trailing end of an expression. Defaults `chars` to a space if none is provided.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `RTRIM(expr[, chars])`
+* **Function type:** Scalar, string
 
-Trims characters from the trailing end of an expression.
+<details><summary>Example</summary>
+
+The following example trims the `_` characters from the trailing end of the string expression.
+
+```sql
+SELECT 
+  '___abc___' AS "original_string",
+  RTRIM('___abc___', '_') AS "trim_end"
+```
+
+Returns the following:
+
+| `original_string` | `trim_end` |
+| -- | -- | 
+| `___abc___` | `___abc` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## SAFE_DIVIDE
 
-`SAFE_DIVIDE(x, y)`
-
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
-
 Returns `x` divided by `y`, guarded on division by 0.
+
+* **Syntax:** `SAFE_DIVIDE(x, y)`
+* **Function type:** Scalar, numeric 
+
+<details><summary>Example</summary>
+
+The following example calculates divisions of integer `78` by integer `10`.
+
+```sql
+SELECT SAFE_DIVIDE(78, 10) AS "safe_division"
+```
+
+Returns the following:
+
+|`safe_division`|
+|--|
+| `7` |
+
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## SIN
 
-`SIN(expr)`
-
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
-
 Calculates the trigonometric sine of an angle expressed in radians.
+
+* **Syntax:** `SIN(expr)`
+* **Function type:** Scalar, numeric
+
+<details><summary>Example</summary>
+
+The following example calculates the sine of angle `PI/3` radians.
+
+```sql
+SELECT SIN(PI / 3) AS "sine"
+```
+Returns the following:
+
+| `sine` |  
+| -- | 
+| `0.8660254037844386` |
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## SQRT
 
@@ -1579,11 +2451,33 @@ Splits `str1` into an array on the delimiter specified by `str2`, which is a reg
 
 ## STRING_FORMAT
 
-`STRING_FORMAT(pattern[, args...])`
+Returns a string formatted in the manner of Java's [String.format](https://docs.oracle.com/javase/8/docs/api/java/lang/String.html#format-java.lang.String-java.lang.Object...-).
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `STRING_FORMAT(pattern[, args...])`
+* **Function type:** Scalar, string 
 
-Returns a string formatted in accordance to Java's String.format method.
+<details><summary>Example</summary>
+
+The following example uses Java String format to pass in `Flight_Number_Reporting_Airline` and `origin_airport` columns, from the `flight-carriers` datasource, as arguments into the string. 
+
+```sql
+SELECT 
+  "Flight_Number_Reporting_Airline" AS "flight_number",
+  "Origin" AS "origin_airport",
+  STRING_FORMAT('Flight No.%d departing from %s', "Flight_Number_Reporting_Airline", "Origin") AS "departure_announcement"
+FROM "flight-carriers"
+LIMIT 1
+```
+
+Returns the following:
+
+| `flight_number` | `origin_airport` | `departure_announcement` |
+| -- | -- | -- |
+| `314` | `SJU` | `Flight No.314 departing from SJU` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## STRING_TO_MV
 
@@ -1595,35 +2489,78 @@ Splits `str1` into an multi-value string on the delimiter specified by `str2`, w
 
 ## STRLEN
 
-`STRLEN(expr)`
-
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
-
 Alias for [`LENGTH`](#length).
+
+* **Syntax:** `STRLEN(expr)`
+* **Function type:** Scalar, string 
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## STRPOS
 
-`STRPOS(<CHARACTER>, <CHARACTER>)`
+Returns the one-based index position of a substring within an expression. If `substring` is not found, returns 0.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `STRPOS(expr, substring)`
+* **Function type:** Scalar, string
 
-Returns the one-based index position of a substring within an expression.
+<details><summary>Example</summary>
+
+The following example returns the one-based index position of `World`.
+
+```sql
+SELECT 
+  'Hello World!' AS "original_string",
+  STRPOS('Hello World!', 'World') AS "index"
+```
+
+Returns the following:
+
+| `original_string` | `index` |
+| -- | -- |
+| `Hello World!` | `7` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## SUBSTR
 
-`SUBSTR(<CHARACTER>, <INTEGER>, [<INTEGER>])`
-
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
-
 Alias for [`SUBSTRING`](#substring).
+
+* **Syntax:** `SUBSTR(expr, index[, length])`
+* **Function type:** Scalar, string
+
+[Learn more](sql-scalar.md#string-functions)
+
 
 ## SUBSTRING
 
-`SUBSTRING(<CHARACTER>, <INTEGER>, [<INTEGER>])`
+Returns a substring of the expression starting at a given one-based index. If `length` is omitted, extracts characters to the end of the string, otherwise returns a substring of `length` characters.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `SUBSTRING(expr, index[, length])`
+* **Function type:** Scalar, string
 
-Returns a substring of the expression starting at a given one-based index.
+<details><summary>Example</summary>
+
+The following example extracts a substring from the string expression `abcdefghi` of length `3` starting at index `4`
+
+```sql
+SELECT 
+  'abcdefghi' AS "original_string",
+  SUBSTRING('abcdefghi', 4, 3) AS "substring"
+```
+
+Returns the following:
+
+| `original_string` | `substring` |
+| -- | -- |
+| `abcdefghi` | `def` |
+
+</details>
+
+
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## SUM
 
@@ -1635,11 +2572,26 @@ Calculates the sum of a set of values.
 
 ## TAN
 
-`TAN(expr)`
-
-**Function type:** [Scalar, numeric](sql-scalar.md#numeric-functions)
-
 Calculates the trigonometric tangent of an angle expressed in radians.
+
+* **Syntax:** `TAN(expr)`
+* **Function type:** Scalar, numeric
+
+<details><summary>Example</summary>
+
+The following example calculates the tangent of angle `PI/3` radians.
+
+```sql
+SELECT TAN(PI / 3) AS "tangent"
+```
+Returns the following:
+
+| `tangent` |  
+| -- | 
+| `1.7320508075688767` |
+</details>
+
+[Learn more](sql-scalar.md#numeric-functions)
 
 ## TDIGEST_GENERATE_SKETCH
 
@@ -1659,11 +2611,32 @@ Returns the quantile for the specified fraction from a T-Digest sketch construct
 
 ## TEXTCAT
 
-`TEXTCAT(<CHARACTER>, <CHARACTER>)`
-
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
-
 Concatenates two string expressions.
+
+* **Syntax:** `TEXTCAT(expr, expr)`
+* **Function type:** Scalar, string
+  
+<details><summary>Example</summary>
+
+The following example concatenates the `OriginState` column from the `flight-carriers` datasource to `, USA`.
+
+```sql
+SELECT
+  "OriginState" AS "origin_state",
+  TEXTCAT("OriginState", ', USA') AS "concatenate_state_with_USA"
+FROM "flight-carriers"
+LIMIT 1
+```
+
+Returns the following:
+
+| `origin_state` | `concatenate_state_with_USA` | 
+| -- | -- | 
+| `PR` | `PR, USA` | 
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## THETA_SKETCH_ESTIMATE
 
@@ -1707,35 +2680,121 @@ Returns a union of Theta sketches.
 
 ## TIME_CEIL
 
-`TIME_CEIL(<TIMESTAMP>, <period>, [<origin>, [<timezone>]])`
+Rounds up a timestamp to a given ISO 8601 time period. You can specify `origin` to provide a reference timestamp from which to start rounding. If provided, `timezone` should be a time zone name like `America/Los_Angeles` or an offset like `-08:00`.
 
-**Function type:** [Scalar, date and time](sql-scalar.md#date-and-time-functions)
+* **Syntax:** `TIME_CEIL(timestamp_expr, period[, origin[, timezone]])`
+* **Function type:** Scalar, date and time
 
-Rounds up a timestamp by a given time period, optionally from some reference time or timezone.
+<details><summary>Example</summary>
+
+The following example rounds up the `__time` column from the `taxi-trips` datasource to the nearest 45th minute in reference to the timestamp `2013-08-01 08:0:00`.
+
+```sql
+SELECT 
+  "__time" AS "original_timestamp",
+  TIME_CEIL("__time", 'PT45M', TIMESTAMP '2013-08-01 08:0:00') AS "time_ceiling"
+FROM "taxi-trips"
+LIMIT 2
+```
+
+Returns the following:
+
+| `original_timestamp` | `time_ceiling` |
+| -- | -- |
+| `2013-08-01T08:14:37.000Z` | `2013-08-01T08:45:00.000Z` |
+| `2013-08-01T09:13:00.000Z` | `2013-08-01T09:30:00.000Z` |
+</details>
+
+[Learn more](sql-scalar.md#date-and-time-functions)
 
 ## TIME_EXTRACT
 
-`TIME_EXTRACT(<TIMESTAMP>, [<unit>, [<timezone>]])`
+Extracts the value of `unit` from the timestamp and returns it as a number. If provided, `timezone` should be a time zone name like `America/Los_Angeles` or an offset like `-08:00`.
 
-**Function type:** [Scalar, date and time](sql-scalar.md#date-and-time-functions)
+* **Syntax:** `TIME_EXTRACT(timestamp_expr[, unit[, timezone]])`
+* **Function type:** Scalar, date and time
 
-Extracts the value of some unit of the timestamp and returns the number.
+<details><summary>Example</summary>
+
+The following example extracts the hour from the `__time` column in the `taxi-trips` datasource and offsets its timezone by `-04:00` hours.
+
+```sql
+SELECT 
+  "__time" AS "original_timestamp",
+  TIME_EXTRACT("__time", 'hour', '-04:00') AS "extract_hour"
+FROM "taxi-trips"
+LIMIT 2
+```
+
+Returns the following:
+
+| `original_timestamp` | `extract_hour` | 
+| -- | -- | 
+| `2013-08-01T08:14:37.000Z` | `4` |
+| `2013-08-01T09:13:00.000Z` | `5` |
+
+</details>
+
+[Learn more](sql-scalar.md#date-and-time-functions)
 
 ## TIME_FLOOR
 
-`TIME_FLOOR(<TIMESTAMP>, <period>, [<origin>, [<timezone>]])`
+Rounds down a timestamp to a given ISO 8601 time period. You can specify `origin` to provide a reference timestamp from which to start rounding. If provided, `timezone` should be a time zone name like `America/Los_Angeles` or an offset like `-08:00`.
 
-**Function type:** [Scalar, date and time](sql-scalar.md#date-and-time-functions)
+* **Syntax:** `TIME_FLOOR(timestamp_expr, period[, origin[, timezone]])`
+* **Function type:** Scalar, date and time
 
-Rounds down a timestamp by a given time period, optionally from some reference time or timezone.
+<details><summary>Example</summary>
+
+The following example rounds down the `__time` column from the `taxi-trips` datasource to the nearest 45th minute in reference to the timestamp `2013-08-01 08:0:00`.
+
+```sql
+SELECT 
+  "__time" AS "original_timestamp",
+  TIME_FLOOR("__time", 'PT45M', TIMESTAMP '2013-08-01 08:0:00') AS "time_floor"
+FROM "taxi-trips"
+LIMIT 2
+```
+
+Returns the following:
+
+| `original_timestamp` | `time_floor` |
+| -- | -- |
+| `2013-08-01T08:14:37.000Z` | `2013-08-01T08:00:00.000Z` |
+| `2013-08-01T09:13:00.000Z` | `2013-08-01T08:45:00.000Z` |
+
+</details>
+
+[Learn more](sql-scalar.md#date-and-time-functions)
 
 ## TIME_FORMAT
 
-`TIME_FORMAT(<TIMESTAMP>, [<pattern>, [<timezone>]])`
+Formats a timestamp as a string in a provided [Joda DateTimeFormat pattern](http://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html). If no pattern is provided, `pattern` defaults to ISO 8601. If provided, `timezone` should be a time zone name like `America/Los_Angeles` or an offset like `-08:00`.
 
-**Function type:** [Scalar, date and time](sql-scalar.md#date-and-time-functions)
+* **Syntax:** `TIME_FORMAT(timestamp_expr[, pattern[, timezone]])`
+* **Function type:** Scalar, date and time
 
-Formats a timestamp as a string.
+<details><summary>Example</summary>
+
+The following example formats the `__time` column from the `flight-carriers` datasource into a string format and offsets the result's timezone by `-05:00` hours.
+
+```sql
+SELECT
+  "__time" AS "original_time",
+TIME_FORMAT( "__time", 'dd-MM-YYYY hh:mm aa zzz', '-05:00') AS "string"
+FROM "taxi-trips"
+LIMIT 1
+```
+
+Returns the following:
+
+| `original_time` | `string` |
+| -- | -- |
+| `2013-08-01T08:14:37.000Z` | `01-08-2013 03:14 AM -05:00` |
+
+</details>
+
+[Learn more](sql-scalar.md#date-and-time-functions)
 
 ## TIME_IN_INTERVAL
 
@@ -1747,19 +2806,62 @@ Returns whether a timestamp is contained within a particular interval, formatted
 
 ## TIME_PARSE
 
-`TIME_PARSE(<string_expr>, [<pattern>, [<timezone>]])`
+Parses a string into a timestamp using a given [Joda DateTimeFormat pattern](http://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html). If no pattern is provided, `pattern` defaults to ISO 8601. Returns NULL if string cannot be parsed. If provided, `timezone` should be a time zone name like `America/Los_Angeles` or an offset like `-08:00`.
 
-**Function type:** [Scalar, date and time](sql-scalar.md#date-and-time-functions)
+* **Syntax:** `TIME_PARSE(string_expr[, pattern[, timezone]])`
+* **Function type:** Scalar, date and time
 
-Parses a string into a timestamp.
+<details><summary>Example</summary>
+
+The following example parses the `FlightDate` STRING column from the `flight-carriers` datasource into a valid timestamp with an offset of `-05:00` hours.
+
+```sql
+SELECT
+  "FlightDate" AS "original_string",
+  TIME_PARSE("FlightDate", 'YYYY-MM-dd', '-05:00') AS "timestamp"
+FROM "flight-carriers"
+LIMIT 1
+```
+
+Returns the following:
+
+| `original_string` | `timestamp` | 
+| -- | -- |
+| `2005-11-01` | `2005-11-01T05:00:00.000Z` |
+
+</details>
+
+[Learn more](sql-scalar.md#date-and-time-functions)
 
 ## TIME_SHIFT
 
-`TIME_SHIFT(<TIMESTAMP>, <period>, <step>, [<timezone>])`
+Shifts a timestamp by a given number of time units. The `period` parameter can be any ISO 8601 period. The `step` parameter can be negative. If provided, `timezone` should be a time zone name like `America/Los_Angeles` or an offset like `-08:00`.
 
-**Function type:** [Scalar, date and time](sql-scalar.md#date-and-time-functions)
+* **Syntax:** `TIME_SHIFT(timestamp_expr, period, step[, timezone])`
+* **Function type:** Scalar, date and time
 
-Shifts a timestamp forwards or backwards by a given number of time units.
+<details><summary>Example</summary>
+
+The following example shifts the `__time` column from the `taxi-trips` datasource back by 24 hours.
+
+```sql
+SELECT
+  "__time" AS "original_timestamp",
+  TIME_SHIFT("__time", 'PT1H', -24) AS "shift_back"
+FROM "taxi-trips"
+LIMIT 1
+```
+
+Returns the following:
+
+| `original_timestamp` | `shift_back` |
+| -- | -- |
+| `2013-08-01T08:14:37.000Z` | `2013-07-31T08:14:37.000Z` | 
+
+</details>
+
+[Learn more](sql-scalar.md#date-and-time-functions)
+
 
 ## TIMESTAMP_TO_MILLIS
 
@@ -1790,17 +2892,35 @@ Takes the difference between two timestamps, returning the results in the given 
 **Function type:** [JSON](sql-json-functions.md)
 
 `TO_JSON_STRING(expr)`
-
 Serializes `expr` into a JSON string.
 
 
 ## TRIM
 
-`TRIM([BOTH|LEADING|TRAILING] [<chars> FROM] expr)`
+Trims the leading and/or trailing characters of an expression. Defaults `chars` to a space if none is provided. Defaults to `BOTH` if no directional argument is provided.
 
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
+* **Syntax:** `TRIM([BOTH|LEADING|TRAILING] [chars FROM] expr)`
+* **Function type:** Scalar, string
 
-Trims the leading or trailing characters of an expression.
+<details><summary>Example</summary>
+
+The following example trims `_` characters from both ends of the string expression.
+
+```sql
+SELECT 
+  '___abc___' AS "original_string",
+  TRIM( BOTH '_' FROM '___abc___') AS "trim_expression"
+```
+
+Returns the following:
+
+| `original_string` | `trim_expression` |
+| -- | -- |
+| `___abc___` | `abc` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## TRUNC
 
@@ -1858,11 +2978,32 @@ For more information, see [UNNEST](./sql.md#unnest).
 
 ## UPPER
 
-`UPPER(expr)`
-
-**Function type:** [Scalar, string](sql-scalar.md#string-functions)
-
 Returns the expression in uppercase.
+
+* **Syntax:** `UPPER(expr)`
+* **Function type:** Scalar, string
+
+<details><summary>Example</summary>
+
+The following example converts the `OriginCityName` column from the `flight-carriers` datasource to uppercase.
+
+```sql
+SELECT 
+  "OriginCityName" AS "origin_city",
+  UPPER("OriginCityName") AS "uppercase"
+FROM "flight-carriers"
+LIMIT 1
+```
+
+Returns the following:
+
+| `origin_city` | `uppercase` |
+| -- | -- |
+`San Juan, PR` | `SAN JUAN, PR` |
+
+</details>
+
+[Learn more](sql-scalar.md#string-functions)
 
 ## VAR_POP
 

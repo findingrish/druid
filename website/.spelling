@@ -31,6 +31,9 @@ apache.org
 AvroStorage
 ARN
 ASC
+arcsine
+arccosine
+arctangent
 autokill
 AWS
 AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
@@ -273,6 +276,7 @@ averager
 averagers
 backend
 backfills
+backfilled
 backpressure
 base64
 big-endian
@@ -321,6 +325,7 @@ deserializes
 downtimes
 druid
 druid–kubernetes-extensions
+druid.table
 e.g.
 encodings
 endian
@@ -379,6 +384,7 @@ json_query
 json_query_array
 json_value
 karlkfi
+kbps
 kerberos
 keystore
 keytool

@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.apache.calcite.rel.RelNode;
 import org.apache.druid.common.config.NullHandling;
+import org.apache.druid.error.DruidException;
 import org.apache.druid.error.DruidExceptionMatcher;
 import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.Intervals;
@@ -31,6 +32,7 @@ import org.apache.druid.math.expr.ExprMacroTable;
 import org.apache.druid.query.Druids;
 import org.apache.druid.query.InlineDataSource;
 import org.apache.druid.query.LookupDataSource;
+import org.apache.druid.query.Order;
 import org.apache.druid.query.QueryDataSource;
 import org.apache.druid.query.aggregation.CountAggregatorFactory;
 import org.apache.druid.query.aggregation.DoubleSumAggregatorFactory;
@@ -1442,7 +1444,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .intervals(querySegmentSpec(Filtration.eternity()))
                 .columns(ImmutableList.of("__time", "cnt", "dim1", "dim2", "dim3", "m1", "m2", "unique_dim1"))
                 .limit(2)
-                .order(ScanQuery.Order.DESCENDING)
+                .order(Order.DESCENDING)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(QUERY_CONTEXT_DEFAULT)
                 .build()
@@ -1468,7 +1470,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .intervals(querySegmentSpec(Filtration.eternity()))
                 .columns(ImmutableList.of("__time", "cnt", "dim1", "dim2", "dim3", "m1", "m2", "unique_dim1"))
                 .limit(Long.MAX_VALUE)
-                .order(ScanQuery.Order.ASCENDING)
+                .order(Order.ASCENDING)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(QUERY_CONTEXT_DEFAULT)
                 .build()
@@ -1518,7 +1520,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .intervals(querySegmentSpec(Filtration.eternity()))
                 .columns(ImmutableList.of("__time", "dim1"))
                 .limit(2)
-                .order(ScanQuery.Order.DESCENDING)
+                .order(Order.DESCENDING)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(QUERY_CONTEXT_DEFAULT)
                 .build()
@@ -1544,7 +1546,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .intervals(querySegmentSpec(Filtration.eternity()))
                 .columns(ImmutableList.of("dim1"))
                 .limit(2)
-                .order(ScanQuery.Order.NONE)
+                .order(Order.NONE)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(QUERY_CONTEXT_DEFAULT)
                 .build()
@@ -1568,7 +1570,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .intervals(querySegmentSpec(Filtration.eternity()))
                 .columns(ImmutableList.of("__time", "dim1"))
                 .limit(2)
-                .order(ScanQuery.Order.DESCENDING)
+                .order(Order.DESCENDING)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(OUTER_LIMIT_CONTEXT)
                 .build()
@@ -1593,7 +1595,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .columns(ImmutableList.of("__time", "dim1"))
                 .offset(1)
                 .limit(2)
-                .order(ScanQuery.Order.DESCENDING)
+                .order(Order.DESCENDING)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(OUTER_LIMIT_CONTEXT)
                 .build()
@@ -1618,7 +1620,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .columns(ImmutableList.of("__time", "dim1"))
                 .offset(1)
                 .limit(1)
-                .order(ScanQuery.Order.DESCENDING)
+                .order(Order.DESCENDING)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(OUTER_LIMIT_CONTEXT)
                 .build()
@@ -1642,7 +1644,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .columns(ImmutableList.of("__time", "dim1"))
                 .offset(1)
                 .limit(2)
-                .order(ScanQuery.Order.DESCENDING)
+                .order(Order.DESCENDING)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(OUTER_LIMIT_CONTEXT)
                 .build()
@@ -1814,7 +1816,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .virtualColumns(expressionVirtualColumn("v0", "concat('beep ',\"dim1\")", ColumnType.STRING))
                 .columns(ImmutableList.of("__time", "v0"))
                 .limit(2)
-                .order(ScanQuery.Order.DESCENDING)
+                .order(Order.DESCENDING)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(QUERY_CONTEXT_DEFAULT)
                 .build()
@@ -1842,7 +1844,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .intervals(querySegmentSpec(Filtration.eternity()))
                 .virtualColumns(expressionVirtualColumn("v0", "concat('beep ',\"dim1\")", ColumnType.STRING))
                 .columns(ImmutableList.of("v0"))
-                .order(ScanQuery.Order.NONE)
+                .order(Order.NONE)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(QUERY_CONTEXT_DEFAULT)
                 .build()
@@ -1870,7 +1872,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                 .virtualColumns(expressionVirtualColumn("v0", "concat('beep ',\"dim1\")", ColumnType.STRING))
                 .columns(ImmutableList.of("__time", "v0"))
                 .limit(2)
-                .order(ScanQuery.Order.DESCENDING)
+                .order(Order.DESCENDING)
                 .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                 .context(QUERY_CONTEXT_DEFAULT)
                 .build()
@@ -1898,7 +1900,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
                             .intervals(querySegmentSpec(Filtration.eternity()))
                             .columns(ImmutableList.of("__time", "dim1"))
                             .limit(4)
-                            .order(ScanQuery.Order.DESCENDING)
+                            .order(Order.DESCENDING)
                             .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                             .context(QUERY_CONTEXT_DEFAULT)
                             .build()
@@ -2138,5 +2140,22 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
             )
         )
         .run();
+  }
+
+  @Test
+  public void testRejectHavingWithWindowExpression()
+  {
+    assertEquals(
+        "1.37.0",
+        RelNode.class.getPackage().getImplementationVersion(),
+        "Calcite version changed; check if CALCITE-6473 is fixed and remove:\n * this assertion\n * DruidSqlValidator#validateHavingClause"
+    );
+
+    testQueryThrows(
+        "SELECT cityName,sum(1) OVER () as w FROM wikipedia group by cityName HAVING w > 10",
+        ImmutableMap.of(PlannerContext.CTX_ENABLE_WINDOW_FNS, true),
+        DruidException.class,
+        invalidSqlContains("Window functions are not allowed in HAVING")
+    );
   }
 }
