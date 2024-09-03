@@ -22,6 +22,7 @@ package org.apache.druid.segment.loading;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.druid.collections.bitmap.BitmapFactory;
+import org.apache.druid.query.OrderBy;
 import org.apache.druid.segment.DimensionHandler;
 import org.apache.druid.segment.Metadata;
 import org.apache.druid.segment.QueryableIndex;
@@ -103,6 +104,12 @@ public class TombstoneSegmentizerFactory implements SegmentizerFactory
           public Map<String, DimensionHandler> getDimensionHandlers()
           {
             return new HashMap<>();
+          }
+
+          @Override
+          public List<OrderBy> getOrdering()
+          {
+            throw new UnsupportedOperationException();
           }
 
           @Override
