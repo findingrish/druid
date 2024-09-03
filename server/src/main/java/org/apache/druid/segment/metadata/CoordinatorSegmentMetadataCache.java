@@ -812,8 +812,6 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
 
       // column type to be updated is not present in the existing schema
       boolean missingUpdateColumns = false;
-      // new column to be added is already present in the existing schema
-      boolean existingNewColumns = false;
 
       for (String column : segmentSchema.getUpdatedColumns()) {
         if (!mergedColumnTypes.containsKey(column)) {
@@ -826,22 +824,20 @@ public class CoordinatorSegmentMetadataCache extends AbstractSegmentMetadataCach
 
       for (String column : segmentSchema.getNewColumns()) {
         if (mergedColumnTypes.containsKey(column)) {
-          existingNewColumns = true;
           mergedColumnTypes.compute(column, (c, existingType) -> columnTypeMergePolicy.merge(existingType, columnMapping.get(column)));
         } else {
           mergedColumnTypes.put(column, columnMapping.get(column));
         }
       }
 
-      if (missingUpdateColumns || existingNewColumns) {
+      if (missingUpdateColumns) {
         log.makeAlert(
-            "Error merging delta schema update with existing row signature. segmentId [%s], "
-            + "existingSignature [%s], deltaSchema [%s], missingUpdateColumns [%s], existingNewColumns [%s].",
+            "Error merging delta schema update with existing row signature. "
+            + "SegmentId [%s], existingSignature [%s], deltaSchema [%s], missingUpdateColumns [%s].",
             segmentId,
             existingSignature,
             segmentSchema,
-            missingUpdateColumns,
-            existingNewColumns
+            missingUpdateColumns
         ).emit();
       }
 
